@@ -1,0 +1,34 @@
+Sandbox_EN = {
+
+
+    Sandbox_AdminRadZone = "Admin Radiation Zone",
+
+    Sandbox_AdminRadZone_DamageDelay = "Damage Delay",
+    Sandbox_AdminRadZone_DamageDelay_tooltip = "Determines the amount of pause before doing next radiation damage",
+    
+
+    Sandbox_AdminRadZone_StepDelay = "Step Delay",
+    Sandbox_AdminRadZone_StepDelay_tooltip = "Determines the amount of pause in betwween radiation zone shrink step. 1000 is 1 second",
+
+    Sandbox_AdminRadZone_MarkerColor = "Radiation Zone Color",
+	Sandbox_AdminRadZone_MarkerColor_option1 = "Gray",
+	Sandbox_AdminRadZone_MarkerColor_option2 = "Red",
+	Sandbox_AdminRadZone_MarkerColor_option3 = "Orange",
+	Sandbox_AdminRadZone_MarkerColor_option4 = "Yellow",
+	Sandbox_AdminRadZone_MarkerColor_option5 = "Green",
+	Sandbox_AdminRadZone_MarkerColor_option6 = "Blue",
+	Sandbox_AdminRadZone_MarkerColor_option7 = "Purple",
+	Sandbox_AdminRadZone_MarkerColor_option8 = "Black",
+	Sandbox_AdminRadZone_MarkerColor_option9 = "White",
+	Sandbox_AdminRadZone_MarkerColor_option10 = "Pink",
+	Sandbox_AdminRadZone_MarkerColor_option11 = "Disabled",
+
+
+    Sandbox_AdminRadZone_DefaultRadius = "Default Radius",
+
+    Sandbox_AdminRadZone_DataString = "Data String DO NOT TOUCH",
+    Sandbox_AdminRadZone_DataString_tooltip = "DO NOT CHANGE THIS NO MATTER WHAT",
+    
+    
+
+}

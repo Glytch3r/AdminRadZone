@@ -1,0 +1,32 @@
+VERSION = 1,
+
+option AdminRadZone.DamageDelay
+{
+	type = double,	 min = 0.00,  max = 250,  default = 50,
+	page = AdminRadZone, translation = AdminRadZone_DamageDelay,
+}
+option AdminRadZone.StepDelay
+{
+	type = double,	 min = 0.00,  max = 5000,  default = 1000,
+	page = AdminRadZone, translation = AdminRadZone_StepDelay,
+}
+
+option AdminRadZone.MarkerColor
+{
+    type = enum, numValues = 11, default = 3,
+    page = AdminRadZone,
+    translation = AdminRadZone_MarkerColor,
+    valueTranslation = AdminRadZone_MarkerColor,
+}
+option AdminRadZone.DefaultRadius
+{
+	type = double,	 min = 0.00,  max = 7949,  default = 50,
+	page = AdminRadZone, translation = AdminRadZone_DefaultRadius,
+}
+
+
+option AdminRadZone.DataString
+{
+	type = string, default = -1:-1:0:1,
+	page = AdminRadZone, translation = AdminRadZone_DataString,
+}
