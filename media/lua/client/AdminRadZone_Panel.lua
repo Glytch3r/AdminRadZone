@@ -1,803 +1,295 @@
- ----------------------------------------------------------------
------  ▄▄▄   ▄    ▄   ▄  ▄▄▄▄▄   ▄▄▄   ▄   ▄   ▄▄▄    ▄▄▄  -----
------ █   ▀  █    █▄▄▄█    █    █   ▀  █▄▄▄█  ▀  ▄█  █ ▄▄▀ -----
------ █  ▀█  █      █      █    █   ▄  █   █  ▄   █  █   █ -----
------  ▀▀▀▀  ▀▀▀▀   ▀      ▀     ▀▀▀   ▀   ▀   ▀▀▀   ▀   ▀ -----
-----------------------------------------------------------------
---                                                            --
---   Project Zomboid Modding Commissions                      --
---   https://steamcommunity.com/id/glytch3r/myworkshopfiles   --
---                                                            --
---   ▫ Discord  ꞉   glytch3r                                  --
---   ▫ Support  ꞉   https://ko-fi.com/glytch3r                --
---   ▫ Youtube  ꞉   https://www.youtube.com/@glytch3r         --
---   ▫ Github   ꞉   https://github.com/Glytch3r               --
---                                                            --
-----------------------------------------------------------------
------ ▄   ▄   ▄▄▄   ▄   ▄   ▄▄▄     ▄      ▄   ▄▄▄▄  ▄▄▄▄  -----
------ █   █  █   ▀  █   █  ▀   █    █      █      █  █▄  █ -----
------ ▄▀▀ █  █▀  ▄  █▀▀▀█  ▄   █    █    █▀▀▀█    █  ▄   █ -----
------  ▀▀▀    ▀▀▀   ▀   ▀   ▀▀▀   ▀▀▀▀▀  ▀   ▀    ▀   ▀▀▀  -----
-----------------------------------------------------------------
+--client folder
+--AdminRadZone_Panel.lua
+require "ISUI/ISPanel"
 
+AdminRadZone = AdminRadZone or {}
+AdminRadZonePanel = ISPanel:derive("AdminRadZonePanel")
+--[[ 
+AdminRadZonePanel.TogglePanel()
+ ]]
+function AdminRadZone.isAdm(pl)
+    pl = pl or getPlayer()
+    if not pl then return false end
+    return isClient() and string.lower(pl:getAccessLevel()) == "admin"
+end
 
-AdminRadZone.point1 = nil
-AdminRadZone.point2 = nil
-function AdminRadZone.setPoint(sq, int)
-    local pl = getPlayer(); if not pl then return end 
-    int = int or 1
-    if int == 2 then
-        AdminRadZone.point2 = pl:getCurrentSquare() 
+function AdminRadZonePanel.ClosePanel()
+    if AdminRadZonePanel.instance then
+        AdminRadZonePanel.instance:setVisible(false)
+        AdminRadZonePanel.instance:removeFromUIManager()
+        AdminRadZonePanel.instance = nil
+    end
+end
+
+function AdminRadZonePanel.OpenPanel()
+    if AdminRadZonePanel.instance == nil then
+        local x = getCore():getScreenWidth() / 3
+        local y = getCore():getScreenHeight() / 2 - 200
+        local w = 290
+        local h = 340
+        AdminRadZonePanel.instance = AdminRadZonePanel:new(x, y, w, h)
+        AdminRadZonePanel.instance:initialise()
+    end
+    AdminRadZonePanel.instance:addToUIManager()
+    AdminRadZonePanel.instance:setVisible(true)
+end
+
+function AdminRadZonePanel.isValid()
+    return AdminRadZone.isAdm(getPlayer())
+end
+
+function AdminRadZonePanel.TogglePanel()
+    if not AdminRadZonePanel.isValid() then
+        AdminRadZonePanel.ClosePanel()
+        return
+    end
+    if AdminRadZonePanel.instance == nil then
+        AdminRadZonePanel.OpenPanel()
     else
-        AdminRadZone.point1 = pl:getCurrentSquare() 
+        if AdminRadZonePanel.instance:isVisible() then
+            AdminRadZonePanel.instance:setVisible(false)
+        else
+            AdminRadZonePanel.instance:setVisible(true)
+        end
     end
 end
-
-
-function AdminRadZone.setRadZoneMarker(targRad, targSq, seconds)
-    local pl = getPlayer()
-    local sq = targSq or pl:getSquare()
-    local rad = targRad or (SandboxVars.AdminRadZone.DefaultRadius or 50)
-    local sec = seconds or 5
-    AdminRadZone.doMarkerSteps(rad, sq, sec)
-end
-
-function AdminRadZone.demo()
-    AdminRadZone.setRadZoneMarker(100, getPlayer():getSquare(), 5)
-end
-
-
-function AdminRadZone.getRadiusFromSquares(sq1, sq2)
-    if not sq1 or not sq2 then return 0 end
-    local dx = sq2:getX() - sq1:getX()
-    local dy = sq2:getY() - sq1:getY()
-    return math.sqrt(dx * dx + dy * dy)
-end
-
-
- ----------------------------------------------------------------
-
---[[
-
-
-
-
-MiniToolkitPanel = MiniToolkitPanel or {}
-MiniToolkitPanel.__index = MiniToolkitPanel
-  
-function MiniToolkitPanel:setTitle(newTitle) 
-    if self.window then
-        self.window:setTitle(newTitle or self.title)
-    end
-end
-
-function MiniToolkitPanel:new(x, y, width, height, title)
-    local o = ISCollapsableWindow.new(self, x, y, width, height)
-    o.buttons = {}
-    o.rows = {}
-    o.buttonSize = 42
-    o.spacing = 2
-    o.bgColor = {r=0.1,g=0.1,b=0.1,a=0.8}
-    o.x = x
-    o.y = y
-    o.title = title or "Mini Toolkit"
-    o.updateTimer = 0
-    o.updateInterval = 30
-    o.window = nil
-    o:buildWindow()
+-----------------------            ---------------------------
+function AdminRadZonePanel:new(x, y, width, height)
+    local o = ISPanel:new(x, y, width, height)
+    setmetatable(o, self)
+    self.__index = self
+    local col = AdminRadZone.getMarkerColor(1)
+    o.borderColor = {r=col.r, g=col.g, b=col.b, a=1}
+    o.backgroundColor = {r=0, g=0, b=0, a=0.8}
+    o.moveWithMouse = true
     return o
 end
 
-function MiniToolkitPanel:addFeature(textFunc, callback, sprite, colorFunc, rowIndex, featureId)
-    rowIndex = rowIndex or 1
-    self.rows[rowIndex] = self.rows[rowIndex] or {}
-    local btn = {
-        textFunc = textFunc,
-        callback = callback,
-        sprite = sprite,
-        colorFunc = colorFunc,
-        active = false,
-        tooltipFunc = nil,
-        featureId = featureId,
-        toggle = false
-    }
-    table.insert(self.rows[rowIndex], btn)
-end
-
-function MiniToolkitPanel:refreshButtons()
-    if not self.window then return end
+function AdminRadZonePanel:initialise()
+    ISPanel.initialise(self)
+    local isActive = AdminRadZoneData.active or false
     
-    local childrenToRemove = {}
-    for i = 1, #self.window.children do
-        local child = self.window.children[i]
-        if child ~= self.window.closeButton then
-            table.insert(childrenToRemove, child)
-        end
-    end
+    local y = 30
+    local spacing = 25
     
-    for _, child in ipairs(childrenToRemove) do
-        self.window:removeChild(child)
-        if child.destroy then child:destroy() end
-    end
+    self.titleLabel = ISLabel:new(20, 10, 15, "Radiation Zone Controller", 1, 1, 1, 1, UIFont.Large, true)
+    self:addChild(self.titleLabel)
+    local y = y + 16 
     
-    self.window:clearChildren()
-    if self.window.closeButton then
-        self.window:addChild(self.window.closeButton)
-    end
+    self.cooldownLabel = ISLabel:new(10, y, 15, "Cooldown:", 1, 1, 1, 1, UIFont.Medium, true)
+    self:addChild(self.cooldownLabel)
+    self.cooldownEntry = ISTextEntryBox:new(tostring(SandboxVars.AdminRadZone.Cooldown or 60), 120, y-2, 80, 18)
+    self.cooldownEntry:initialise()
+    self.cooldownEntry:instantiate()
+    self.cooldownEntry.onTextChange = AdminRadZonePanel.onCooldownChange
+    self:addChild(self.cooldownEntry)
+
+    self.currentTimeLabel = ISLabel:new(150, y, 15, "Current: 0", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
+    self:addChild(self.currentTimeLabel)
+
+    y = y + spacing
     
-    local th = self.window:titleBarHeight()
-    local yOffset = th
-    local maxWidth = 0
+    self.durationLabel = ISLabel:new(10, y, 15, "Round Duration: " .. tostring(SandboxVars.AdminRadZone.RoundDuration or 60) .. "s", 1, 1, 1, 1, UIFont.Medium, true)
+    self:addChild(self.durationLabel)
     
-    for rowIndex = 1, 10 do
-        local row = self.rows[rowIndex]
-        if row and #row > 0 then
-            local xOffset = 4
-            for _, btn in ipairs(row) do
-                if btn then
-                    local b = ISButton:new(xOffset, yOffset, self.buttonSize, self.buttonSize, "", nil, nil)
-                    b:initialise()
-                    b.borderColor = {r=0,g=0,b=0,a=0}
-                    
-                    local bgColor
-                    if type(btn.colorFunc) == "function" then
-                        bgColor = btn.colorFunc()
-                    else
-                        bgColor = btn.colorFunc
-                    end
-                    b.backgroundColor = bgColor or {r=0,g=0,b=0,a=0}
-                    b.backgroundColorMouseOver = {r=0,g=1,b=0,a=1}
-                    
-                    if btn.sprite then b:setImage(getTexture(btn.sprite)) end
-                    
-                    local tooltip = nil
-                    if btn.tooltipFunc then
-                        tooltip = btn.tooltipFunc()
-                    elseif btn.tooltip then
-                        tooltip = btn.tooltip
-                    else
-                        tooltip = btn.textFunc and btn.textFunc() or ""
-                    end
-                    if tooltip and tooltip ~= "" then 
-                        b:setTooltip(tooltip) 
-                    end
-                    
-                    b:setOnClick(function(button)
-                        if btn.toggle then
-                            btn.active = not btn.active
-                            local newColor = type(btn.colorFunc) == "function" and btn.colorFunc() or btn.colorFunc
-                            button.backgroundColor = newColor or {r=0,g=0,b=0,a=0}
-                        end
-                        if btn.callback then btn.callback() end
-                    end)
-                    
-                    self.window:addChild(b)
-                    xOffset = xOffset + self.buttonSize + self.spacing
-                end
-            end
-            maxWidth = math.max(maxWidth, xOffset + 4)
-            yOffset = yOffset + self.buttonSize + self.spacing
-        end
-    end
+    y = y + spacing
     
-    self.window:setWidth(maxWidth)
-    self.window:setHeight(yOffset + 4)
+    self.shrinkRateLabel = ISLabel:new(10, y, 15, "Shrink Rate: 0.00/s", 1, 1, 1, 1, UIFont.Medium, true)
+    self:addChild(self.shrinkRateLabel)
     
-    if self.window.NewTitle and self.window.NewTitle ~= "" then
-        self:setTitle(self.window.NewTitle)
+    y = y + spacing + 10
+
+
+    local cRound = SandboxVars.AdminRadZone.DefaultRounds or 5
+    local cRad = SandboxVars.AdminRadZone.DefaultRadius or 50
+    if isActive then
+        cRound = AdminRadZoneData.rounds
+        cRad = AdminRadZoneData.rad
     end
-end
-
-function MiniToolkitPanel:buildWindow()
-    local minWidth = math.max(160, #self.title*8 + 50)
-    self.window = ISCollapsableWindow:new(self.x, self.y, minWidth+15, self.buttonSize + 20)
-    self.window.collapseButton = nil
-    
-    function self.window:createChildren()
-        ISCollapsableWindow.createChildren(self)
-        if self.collapseButton then
-            self:removeChild(self.collapseButton)
-            self.collapseButton = nil
-        end
-        if self.closeButton then
-            self:removeChild(self.closeButton)
-            self.closeButton = nil
-        end
-    end
-    
-    function self.window:update()
-        ISCollapsableWindow.update(self)
-        if self.panelRef and self.panelRef.onUpdate then
-            self.panelRef:onUpdate()
-        end
-    end
-    
-    self.window:initialise()
-    if self.window.closeButton then
-        self.window.closeButton:setVisible(false);
-    end
-    self.window:addToUIManager()
-    self.window.resizable = false
-    self.window:setTitle(self.title)
-    self.window.defaultTitle = self.title
-    self.window:setHeight(self.buttonSize + self.window:titleBarHeight())
-    self.window.panelRef = self
-end
-
-function MiniToolkitPanel:updateZoneData()
-    local zones = NonPvpZone.getAllZones()
-    local total = zones:size()
-    if total > 0 then
-        if not AdminRadZone.selectedIndex or AdminRadZone.selectedIndex >= total then
-            AdminRadZone.selectedIndex = 0
-        end
-        AdminRadZone.selected = zones:get(AdminRadZone.selectedIndex)
-    else
-        AdminRadZone.selected = nil
-        AdminRadZone.selectedIndex = 0
-    end
-
-
-    self:refreshButtons()
-end
-
------------------------            ---------------------------
-function MiniToolkitPanel.prevZone()
-    local zones = NonPvpZone.getAllZones()
-    local total = zones:size()
-    if total == 0 then return end
-    AdminRadZone.selectedIndex = (AdminRadZone.selectedIndex - 1 + total) % total
-    AdminRadZone.selected = zones:get(AdminRadZone.selectedIndex)
-end
-
-function MiniToolkitPanel.nextZone()
-    local zones = NonPvpZone.getAllZones()
-    local total = zones:size()
-    if total == 0 then return end
-    AdminRadZone.selectedIndex = (AdminRadZone.selectedIndex + 1) % total
-    AdminRadZone.selected = zones:get(AdminRadZone.selectedIndex)
-end
------------------------            ---------------------------
-function MiniToolkitPanel:update()
-    print('update')
-    for _, row in pairs(self.rows) do
-        for _, btn in ipairs(row) do
-            if btn.tooltipFunc then
-                btn.tooltip = btn.tooltipFunc()
-            end
-            if btn.colorFunc then
-                btn.activeColor = btn.colorFunc()
-            end
-        end
-    end
-    self:refreshButtons()
-end
-
-function MiniToolkitPanel:close()
-    if self.window then
-        self.window:close()
-        self.window = nil
-    end
-end
-
-function MiniToolkitPanel:isVisible()
-    return self.window ~= nil
-end
-
-function MiniToolkitPanel:show()
-    if not self.window then
-        self:buildWindow()
-        self:refreshButtons()
-    end
-end
-
-function MiniToolkitPanel:hide()
-    self:close()
-end
-
-function MiniToolkitPanel:clearRow(rowIndex)
-    if self.rows[rowIndex] then
-        self.rows[rowIndex] = nil
-        self:refreshButtons()
-    end
-end
-
-function MiniToolkitPanel:toggleRow(rowIndex)
-    if self.rows[rowIndex] then
-        self.rows[rowIndex] = nil
-    else
-        self.rows[rowIndex] = {}
-    end
-    self:refreshButtons()
-end
-
-function MiniToolkitPanel:toggleFeature(featureId, targetRow)
-    targetRow = targetRow or 2
-    
-    --print("Toggling feature: " .. featureId .. ", current active: " .. tostring(self.activeFeature))
-    
-    if self.activeFeature == featureId then
-    
-        --print("Hiding feature: " .. featureId)
-        self.rows[targetRow] = nil
-        self.activeFeature = nil
-    else
-    
-        --print("Switching to feature: " .. featureId)
-        self.rows[targetRow] = nil  
-        self.activeFeature = featureId
-        self.rows[targetRow] = {} 
-        
-        if self.featureCallbacks and self.featureCallbacks[featureId] then
-            self.featureCallbacks[featureId](self, targetRow)
-        end
-    end
-    
-    for i, row in pairs(self.rows) do
-        if row then
-            --print("Row " .. i .. " has " .. #row .. " buttons")
-        end
-    end
-    
-    self:refreshButtons()
-end
-
-function MiniToolkitPanel:addFeatureCallback(featureId, callback)
-    self.featureCallbacks = self.featureCallbacks or {}
-    self.featureCallbacks[featureId] = callback
-end
-
-MiniToolkitPanel.instances = MiniToolkitPanel.instances or {}
-
-function MiniToolkitPanel.Launch()
-    local pl = getPlayer()
-    if not pl then return end
-
-
-    if AdminRadZone.AreaMarkers then
-        AdminRadZone.delAreaMarkers(AdminRadZone.AreaMarkers)
-        AdminRadZone.AreaMarkers = {}
-    end
-
-
-
-    AdminRadZone.FirstPoint = nil
-    AdminRadZone.SecondPoint = nil
-    AdminRadZone.BuildStr = "Stand on Starting Point"
-    AdminRadZone.fencedTitle = nil
-    AdminRadZone.stage = 0
-    if MiniToolkitPanel.panel1 and MiniToolkitPanel.panel1:isVisible() then
-        MiniToolkitPanel.panel1:close()
-        MiniToolkitPanel.panel1 = nil
-        return
-    end
-    
-    MiniToolkitPanel.panel1 = MiniToolkitPanel:new(getCore():getScreenWidth() / 3, getCore():getScreenHeight() / 3, 200, 100, "Mini Toolkit")
-    table.insert(MiniToolkitPanel.instances, MiniToolkitPanel.panel1)
-    function MiniToolkitPanel.step()
-        AdminRadZone.AreaSq = nil
-        MiniToolkitPanel:updateZoneData()
-        MiniToolkitPanel.panel1:toggleFeature("AdminRadZoneUI", 2)
-        MiniToolkitPanel.panel1:toggleFeature("AdminRadZoneUI", 2)
-    end
-    MiniToolkitPanel:updateZoneData()
-
-    MiniToolkitPanel.panel1:addFeature(
-        function() return "Admin Fence" end,
-        function()
-            MiniToolkitPanel.panel1:toggleFeature("AdminRadZoneUI", 2)
-        end,
-        "media/ui/LootableMaps/map_trap.png",
-        nil,
-        1,
-        "AdminRadZoneUI"
-    )
-    
-    MiniToolkitPanel.panel1:addFeature(
-        function() return "Under Construction" end,
-        function()
-            MiniToolkitPanel.panel1:toggleFeature("feature2", 2)
-        end,
-        "media/ui/LootableMaps/map_skull.png",
-        nil,
-        1,
-        "feature2"
-    )
-    -----------------------            ---------------------------
-    
-    local cred = "Modded by:\nGlytch3r\n\nCommissioned by:\nProject One/Life Server"
-    MiniToolkitPanel.panel1:addFeature(
-        function() return "Credits" end,
-        function()
-            pl:setHaloNote(tostring(cred), 111, 219, 21, 260)
-            pl:playSoundLocal("BreakFishingLine")
-        end,
-        "media/ui/LootableMaps/map_star.png",
-        nil,
-        1
-    )
-    
-    MiniToolkitPanel.panel1:addFeature(
-        function() return "Exit" end,
-        function()
-            MiniToolkitPanel.Launch()
-        end,
-        "media/ui/LootableMaps/map_x.png",
-        nil,
-        1
-    )
-    -----------------------            ---------------------------
-    MiniToolkitPanel.panel1:addFeatureCallback("AdminRadZoneUI", function(panel, row)
-
-
-        panel:addFeature(
-            function() return "Zone Visibility " .. tostring(pl:isSeeNonPvpZone()) end,
-            function()
-                pl:setSeeNonPvpZone(not pl:isSeeNonPvpZone()) 
-                MiniToolkitPanel.step()
-            end,
-            "media/ui/LootableMaps/map_target.png",
-            function()
-                return pl:isSeeNonPvpZone() and {r=0.5,g=0.91,b=0.32,a=1} or {r=0.5,g=0,b=0,a=1}
-            end,
-            row
-        )
-
-
-        panel:addFeature(
-            function()
-                if AdminRadZone.selected then
-                    local cx,cy=AdminRadZone.getCenter(AdminRadZone.selected:getX(), AdminRadZone.selected:getY(), AdminRadZone.selected:getX2(), AdminRadZone.selected:getY2())
-
-                    return "Teleport to Zone " .. tostring(cx) .. "," .. tostring(cy)
-                else
-                    return "Teleport (No Zone Selected)"
-                end
-            end,
-            function()
-                if AdminRadZone.selected then
-                    local cx,cy=AdminRadZone.getCenter(AdminRadZone.selected:getX(), AdminRadZone.selected:getY(), AdminRadZone.selected:getX2(), AdminRadZone.selected:getY2())
-
-                    SendCommandToServer("/teleportto " ..tostring(round(cx)) .. "," .. tostring(round(cy)) .. ",0")
-                    pl:playSoundLocal("RemoveBarricadeMetal")
-                end
-            end,
-            "media/ui/LootableMaps/map_asterisk.png",
-            nil,
-            row
-        )
-
-        panel:addFeature(
-            function() return "Add Fence" end,
-            function()
-                if AdminRadZone.selected then
-                    AdminRadZone.setZoneFence(AdminRadZone.selected, true)
-                end
-            end,
-            "media/ui/LootableMaps/map_medcross.png",
-            nil,
-            row
-        )
-        -----------------------            ---------------------------
-        
-        panel:addFeature(
-            function() return "Remove Fence" end,
-            function()
-                if AdminRadZone.selected then
-                    AdminRadZone.setZoneFence(AdminRadZone.selected, false)
-                    pl:playSoundLocal("ForkBreak")
-                end
-            end,
-            "media/ui/LootableMaps/map_garbage.png",
-            nil,
-            row
-        )
-
-        local thisZone = NonPvpZone.getNonPvpZone(pl:getX(), pl:getY())
-        local zoneTitle = "" 
-
-        if thisZone then
-           zoneTitle = thisZone:getTitle()
-        end
-
-        panel:addFeature(
-            function() return "Remove Fenced Zone\n"..   tostring(zoneTitle) end,
-            function()
-                if thisZone and zoneTitle then
-                    AdminRadZone.setZoneFence(zoneTitle, false)
-                    NonPvpZone.removeNonPvpZone(zoneTitle);
-                    pl:playSoundLocal("BreakBarricadeMetal")
-                    pl:addLineChatElement(tostring(zoneTitle).." Deleted")
-                else
-                    pl:addLineChatElement("Stand on a zone to use this button")
-                end
-                MiniToolkitPanel.step()
-            end,
-            "media/ui/LootableMaps/map_garbage.png",
-            nil,
-            row
-        )
-        -----------------------            ---------------------------
-        panel:addFeature(
-            function()
-                return "Zone Recovery " .. (AdminRadZone.isSafeZoneRecover() and "[ON]" or "[OFF]")
-            end,
-            function()
-                AdminRadZone.setSafeZoneRecover(not AdminRadZone.isSafeZoneRecover())
-     
-            end,
-            "media/ui/LootableMaps/map_heart.png",
-            function()
-                return AdminRadZone.isSafeZoneRecover() and {r=0.5,g=0.91,b=0.32,a=1} or {r=0.5,g=0,b=0,a=1}
-            end,
-            row
-        )
-
-        panel:addFeature(
-            function() return "Previous Zone" end,
-            function()
-                MiniToolkitPanel.prevZone()
-                if AdminRadZone.selected then
-                    MiniToolkitPanel.panel1:setTitle("AdminRadZone: " .. AdminRadZone.selected:getTitle())
-                    pl:addLineChatElement(AdminRadZone.selected:getTitle())
-                    pl:playSoundLocal("StakeBreak")
-                end
-            end,
-            "media/ui/LootableMaps/map_arrowwest.png",
-            nil,
-            row
-        )
-        
-
-        panel:addFeature(
-            function() return "Next Zone" end,
-            function()
-                MiniToolkitPanel.nextZone()
-                if AdminRadZone.selected then
-                    MiniToolkitPanel.panel1:setTitle("AdminRadZone: " .. AdminRadZone.selected:getTitle())
-                    pl:addLineChatElement(AdminRadZone.selected:getTitle())
-                    pl:playSoundLocal("StakeBreak")
-                end
-            end,
-            "media/ui/LootableMaps/map_arroweast.png",
-            nil,
-            row
-        )
-
-  
-
-        if AdminRadZone.fencedTitle and AdminRadZone.FirstPoint and AdminRadZone.SecondPoint  then
-            AdminRadZone.FirstPoint  = nil
-            AdminRadZone.SecondPoint = nil
-            AdminRadZone.fencedTitle = nil
-            AdminRadZone.BuildStr = "Stand on Starting Point"
-        end
-        local buildIco = "media/ui/XBOX_A.png"
-        local point1 = AdminRadZone.FirstPoint  or nil
-        local point2 = AdminRadZone.SecondPoint or nil
-        
-        if point2 and point1 and not AdminRadZone.fencedTitle then
-            AdminRadZone.stage = 3
-            buildIco = "media/ui/LootableMaps/map_diamond.png"
-        elseif point1 and not point2 and not AdminRadZone.fencedTitle then
-            AdminRadZone.stage = 2
-            buildIco = "media/ui/XBOX_B.png"
-        elseif not point1 and not point2 and not AdminRadZone.fencedTitle then
-            AdminRadZone.stage = 1
-            buildIco = "media/ui/XBOX_A.png"
-        end
-            
-        if AdminRadZone.stage == 0 then
-                    
-            if AdminRadZone.AreaMarkers then
-                AdminRadZone.delAreaMarkers(AdminRadZone.AreaMarkers)
-                AdminRadZone.AreaMarkers = {}
-            end
-
-        end
-
-        panel:addFeature(
-            function() return "Fenced Zone\n"..tostring(AdminRadZone.BuildStr) end,
-            function()
-                if AdminRadZone.stage == 3 then
-                    local point1 = AdminRadZone.FirstPoint
-                    local point2 = AdminRadZone.SecondPoint
-                    if point1 and point2 then
-                        local x1, y1 = round(point1:getX()), round(point1:getY())
-                        local x2, y2 = round(point2:getX()), round(point2:getY())
-                        AdminRadZone.fencedTitle = "Zone #" .. tostring(NonPvpZone.getAllZones():size() + 1) .. " [Fenced]"
-                        NonPvpZone.addNonPvpZone(AdminRadZone.fencedTitle, x1, y1, x2, y2)
-                        AdminRadZone.selected = NonPvpZone.getZoneByTitle(AdminRadZone.fencedTitle)
-                        AdminRadZone.doFence(x1, y1, x2, y2, pl:getZ(), true)
-                        pl:addLineChatElement("Added: " .. AdminRadZone.fencedTitle)
-                        pl:playSoundLocal("StakeBreak")
-                    end
-                    AdminRadZone.stage = 0
-                    AdminRadZone.FirstPoint = nil
-                    AdminRadZone.SecondPoint = nil
-                    AdminRadZone.fencedTitle = nil
-                    AdminRadZone.BuildStr = "Stand on Starting Point"
-                    if AdminRadZone.AreaMarkers then
-                        AdminRadZone.delAreaMarkers(AdminRadZone.AreaMarkers)
-                        AdminRadZone.AreaMarkers = {}
-                    end
-                    MiniToolkitPanel.step()
-
-                elseif AdminRadZone.stage == 2 then
-                    AdminRadZone.SecondPoint = pl:getCurrentSquare()
-                    local p1 = AdminRadZone.FirstPoint
-                    local p2 = AdminRadZone.SecondPoint
-                    if p1 and p2 then
-                        local x1, y1 = round(p1:getX()), round(p1:getY())
-                        local x2, y2 = round(p2:getX()), round(p2:getY())
-                        AdminRadZone.AreaSq = AdminRadZone.getFenceEdgeSquares(x1, y1, x2, y2)
-                        if AdminRadZone.AreaSq then
-                            AdminRadZone.AddAreaMarkers(AdminRadZone.AreaSq)
-                        end
-                        AdminRadZone.BuildStr = "Press to Build"
-                        AdminRadZone.stage = 3
-                    end
-                    MiniToolkitPanel.step()
-
-                elseif AdminRadZone.stage == 1 then
-                    AdminRadZone.FirstPoint = pl:getCurrentSquare()
-                    AdminRadZone.BuildStr = "Stand on Second Point"
-                    AdminRadZone.stage = 2
-                    MiniToolkitPanel.step()
-                end
-            end,
-            tostring(buildIco),
-            nil,
-            row
-        )
-
-
-
-
-    end)
-    
-    
-    -----------------------            ---------------------------
-    MiniToolkitPanel.panel1:addFeatureCallback("feature2", function(panel, targetRow)
-      
-        panel:addFeature(           
-            function() return "Demo Function 1" end,
-            function()
-                pl:getCell():addLamppost(IsoLightSource.new(pl:getX(), pl:getY(), pl:getZ(), 255, 255, 255, 255))               
-                pl:addLineChatElement("Demo Function" .. tostring(i)..": Only you can see this local light")
-            end,
-            "media/ui/Glytch3r_1.png",
-            nil,
-            targetRow
-        )
-       
-        panel:addFeature(
-            function() return "Demo Function 2" end,
-            function()
-
-                pl:setBumpType("pushedbehind");  
-                pl:setVariable("BumpFall", true);
-                pl:setVariable("BumpFallType", "pushedbehind");  
-                
-                getSoundManager():PlayWorldSound('ZombieSurprisedPlayer', pl:getSquare(), 0, 5, 5, false);
-                pl:addLineChatElement("Demo Function" .. tostring(i)..": Incase you get animation stuck this will help you escape")
-
-            end,
-            "media/ui/Glytch3r_2.png",
-
-            nil,
-            targetRow
-        )
-        panel:addFeature(
-            function() return "Demo Function 3" end,
-            function()
-                getSoundManager():PlayWorldSound('ZombieSurprisedPlayer', pl:getSquare(), 0, 5, 5, false);
-                pl:addLineChatElement("Demo Function" .. tostring(i)..": Nearby players can hear that even if youre invi")
-            end,
-            "media/ui/Glytch3r_3.png",
-            nil,
-            targetRow
-        )
-
-        panel:addFeature(
-            function() return "Demo Function 4" end,
-            function()
-                local args = { x = pl:getX(), y = pl:getY(), z = pl:getZ() }
-                sendClientCommand(pl, 'object', 'addExplosionOnSquare', args)
-                pl:addLineChatElement("Demo Function" .. tostring(i)..": Boom!")
-            end,
-            "media/ui/Glytch3r_4.png",
-
-            nil,
-            targetRow
-        )
-        panel:addFeature(
-            function() return "Demo Function 5" end,
-            function()
-                local rad =8
-                local cell = pl:getCell()
-                local x, y, z = pl:getX(), pl:getY(), pl:getZ()
-                for xDelta = -rad, rad do
-                    for yDelta = -rad, rad do
-                        local sq = cell:getOrCreateGridSquare(x + xDelta, y + yDelta, z)
-                        for i=0, sq:getMovingObjects():size()-1 do
-                            local zed = sq:getMovingObjects():get(i)
-                            if zed and instanceof(zed, "IsoZombie") then
-                                zed:setSkeleton(not zed:isSkeleton());          
-                            end
-                        end
-                    end
-                end
-
-                pl:addLineChatElement("Demo Function" .. tostring(i)..": Glytch3r's Minions")
-            end,
-            "media/ui/Glytch3r_5.png",
-            nil,
-            targetRow
-        )
-        -----------------------            ---------------------------
-    end)
-    MiniToolkitPanel.panel1:refreshButtons()
-    MiniToolkitPanel:updateZoneData()
-end
-
-function MiniToolkitPanel.updateAll()
-    for i, instance in ipairs(MiniToolkitPanel.instances) do
-        if instance and instance:isVisible() then
-            instance:update()
-        else
-            table.remove(MiniToolkitPanel.instances, i)
-        end
-    end
-end
-
-function MiniToolkitPanel.getInstance(index)
-    return MiniToolkitPanel.instances[index or 1]
-end
-
-function MiniToolkitPanel.getMainPanel()
-    return MiniToolkitPanel.panel1
-end
-
------------------------            ---------------------------
-function AdminRadZone.getFenceEdgeSquares(x1, y1, x2, y2)
-    local squares = {}
-    for x = x1, x2 do
-        for y = y1, y2 do
-            if x == x1 or x == x2 or y == y1 or y == y2 then
-                local sq = getCell():getGridSquare(x, y, 0)
-                if sq then
-                    table.insert(squares, sq)
-                end
-            end
-        end
-    end
-    return squares
-end
-
-function AdminRadZone.AddAreaMarkers(edgeSquares)    
-    AdminRadZone.AreaMarkers = {}
-    for _, sq in ipairs(edgeSquares) do
-        local marker = getWorldMarkers():addGridSquareMarker(
-            "circle_center",
-            "circle_only_highlight",
-            sq,
-            1, 1, 1,
-            true,
-            1
-        )
-        table.insert(AdminRadZone.AreaMarkers, marker)
-    end
-    return AdminRadZone.AreaMarkers
-end
-
-function AdminRadZone.delAreaMarkers(AreaMarkers)
-    AreaMarkers = AreaMarkers or AdminRadZone.AreaMarkers or nil
-    for _, marker in ipairs(AreaMarkers) do
-        if marker then
-            marker:remove()
-        end
-    end
-    AdminRadZone.AreaMarkers = nil
-end
+    self.roundsLabel = ISLabel:new(15, y, 15, "Rounds:", 1, 1, 1, 1, UIFont.Medium, true)
+    self:addChild(self.roundsLabel)
+    self.roundsEntry = ISTextEntryBox:new(tostring(cRound), 120, y-2, 80, 18)
+    self.roundsEntry:initialise()
+    self.roundsEntry:instantiate()
+    self.roundsEntry.onTextChange = AdminRadZonePanel.onRoundsChange
+    self:addChild(self.roundsEntry)
+    --[[ 
+    SandboxVars.AdminRadZone.Cooldown
+    SandboxVars.AdminRadZone.RoundDuration
  ]]
+
+    y = y + spacing
+    
+    self.radiusLabel = ISLabel:new(15, y, 15, "Initial Radius:", 1, 1, 1, 1, UIFont.Medium, true)
+    self:addChild(self.radiusLabel)
+    self.radiusEntry = ISTextEntryBox:new(tostring(cRad), 120, y-2, 80, 18)
+    self.radiusEntry:initialise()
+    self.radiusEntry:instantiate()
+    self.radiusEntry.onTextChange = AdminRadZonePanel.onRadiusChange
+    self:addChild(self.radiusEntry)
+    
+
+    
+    y = y + spacing + 10
+    
+
+    self.totalTimeLabel = ISLabel:new(150, y, 15, "Total Duration: 0s", 1, 1, 0.5, 1, UIFont.Medium, true)
+    self:addChild(self.totalTimeLabel)    
+
+
+
+    self.xyBtn = ISButton:new(15, y+40, 80, 25,  "Select Square", self, AdminRadZonePanel.onXY)
+    self.xyBtn.borderColor =  { r = 0.41, g = 0.80, b = 1.0 ,a=1}
+
+    self.xyBtn:initialise()
+    self.xyBtn:instantiate()
+    self:addChild(self.xyBtn)
+    self.xyLabel = ISLabel:new(15, y, 15, "Coordinates:", 1, 1, 1, 1, UIFont.Small, true)
+    self:addChild(self.xyLabel)
+    y = y + spacing + 10
+
+    
+    self.startStopBtn = ISButton:new(150, y, 80, 25, "", self, AdminRadZonePanel.onStartStop)
+    self.startStopBtn:initialise()
+    self.startStopBtn:instantiate()
+    self.startStopBtn.borderColor = {r=1, g=1, b=1, a=0.1}
+    if isActive then
+        --self.startStopBtn.title = "STOP"
+        self.startStopBtn:setImage(getTexture("media/ui/AdminRadZonePanel_Stop.png"))
+    else
+        --self.startStopBtn.title = "START"
+        self.startStopBtn:setImage(getTexture("media/ui/AdminRadZonePanel_Start.png"))
+    end
+    self:addChild(self.startStopBtn)
+
+
+
+    self.exitBtn = ISButton:new(150, y+40, 80, 25,  "Exit", self, AdminRadZonePanel.onExit)
+    self.exitBtn.borderColor= {r=1, g=0, b=0, a=0.67}
+    self.exitBtn:initialise()
+    self.exitBtn:instantiate()
+    self:addChild(self.exitBtn)
+    y = y + spacing + 15
+    self.currentRadiusLabel = ISLabel:new(15, y, 15, "Radius: 0", 0.7, 0.7, 0.7, 1, UIFont.Medium, true)
+    self:addChild(self.currentRadiusLabel)
+
+end
+
+function AdminRadZonePanel:update()
+    ISPanel.update(self)
+    
+    if not AdminRadZoneData then return end
+    
+
+    local shrinkRate = 0
+    if AdminRadZoneData.rad and AdminRadZoneData.rounds and AdminRadZoneData.rounds > 0 then
+        local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
+        if roundDuration > 0 then
+            shrinkRate = AdminRadZoneData.rad / roundDuration
+        end
+    end
+    self.shrinkRateLabel.name = "Shrink Rate: " .. string.format("%.2f", shrinkRate) .. "/s"
+    
+    local currentRad = AdminRadZoneData.rad or 0
+    self.currentRadiusLabel.name = "Radius: " .. string.format("%.1f", currentRad)
+
+
+    local pl = getPlayer()
+    local x, y = round(pl:getX()),  round(pl:getY())
+
+    self.xyLabel.name = "Coordinates:\nX:" .. tostring(x).."\nY:".. tostring(y)    
+
+    local rounds = tonumber(self.roundsEntry:getText()) or SandboxVars.AdminRadZone.DefaultRounds 
+    local cooldown = tonumber(self.cooldownEntry:getText()) or 60
+    local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
+    local totalTime = (rounds * roundDuration) + (cooldown * rounds)
+    self.totalTimeLabel.name = "Total Duration:\n" .. totalTime .. "s (" .. math.floor(totalTime/60) .. "m " .. (totalTime%60) .. "s)"
+
+    local currentCd = AdminRadZoneData.duration or 0
+    self.currentTimeLabel:setColor( 0.86,  0.86, 0.67)
+
+    if cooldown <= 0 then
+        currentCd = AdminRadZoneData.cooldown or 0
+        self.currentTimeLabel:setColor(0.61,  0.86, 1.0)
+    end
+    self.currentTimeLabel.name = "Round Time: "..tostrintg(currentCd)
+end
+
+function AdminRadZonePanel.onCooldownChange()
+    local value = tonumber(AdminRadZonePanel.instance.cooldownEntry:getText())
+    if value and value >= 0 then
+        AdminRadZone.setCooldown({cooldown = value})
+    end
+end
+
+function AdminRadZonePanel.onXY()
+    local pl = getPlayer()
+    local x, y = round(pl:getX()),  round(pl:getY())
+    AdminRadZoneData.x = x
+    AdminRadZoneData.y = y
+
+    AdminRadZone.updateMarker()
+    AdminRadZone.doTransmit(AdminRadZoneData)
+end
+
+function AdminRadZonePanel.onRoundsChange()
+    local value = tonumber(AdminRadZonePanel.instance.roundsEntry:getText())
+    if value and value > 0 then
+        AdminRadZone.setRounds({rounds = value})
+    end
+end
+
+function AdminRadZonePanel.onRadiusChange()
+    local value = tonumber(AdminRadZonePanel.instance.radiusEntry:getText())
+    if value and value > 0 then
+        AdminRadZone.setRad({rad = value})
+    end
+end
+
+function AdminRadZonePanel:onStartStop()
+    local isActive = AdminRadZoneData and AdminRadZoneData.active or false
+    if isActive then
+        AdminRadZone.activate(false)
+        self.startStopBtn:setImage(getTexture("media/ui/AdminRadZonePanel_Start.png"))
+    else
+        self.startStopBtn:setImage(getTexture("media/ui/AdminRadZonePanel_Stop.png"))
+
+        if AdminRadZone.marker then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
+
+        local pl = getPlayer()
+        local x, y = -1, -1
+        if pl then
+            x, y = round(pl:getX()), round(pl:getY())
+        end
+
+        if x and y then
+            AdminRadZoneData.x = x
+            AdminRadZoneData.y = y
+        end
+
+        AdminRadZoneData.rad = tonumber(self.radiusEntry:getText()) or (SandboxVars.AdminRadZone.DefaultRadius or 50)
+        AdminRadZoneData.rounds = tonumber(self.roundsEntry:getText()) or (SandboxVars.AdminRadZone.DefaultRounds or 5)
+        AdminRadZoneData.cooldown = tonumber(self.cooldownEntry:getText()) or (SandboxVars.AdminRadZone.Cooldown or 60)
+        AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
+
+        AdminRadZone.activate(true)
+        AdminRadZone.doTransmit(AdminRadZoneData)--[[  ]]
+    end
+    print(AdminRadZoneData.active)
+end
+
+
+function AdminRadZonePanel:onExit()
+    AdminRadZonePanel.ClosePanel()
+end
+
+function AdminRadZonePanel:onClear()
+    AdminRadZone.clear()
+end
+
+function AdminRadZonePanel:render()
+    ISPanel.render(self)
+end

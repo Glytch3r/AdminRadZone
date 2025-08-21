@@ -1,21 +1,26 @@
--- server side
+--server folder
+--AdminRadZone_Server.lua
 if isClient() then return end
 
 AdminRadZone = AdminRadZone or {}
-local Commands = {}
-Commands.AdminRadZone = {}
 
-Commands.AdminRadZone.Clear = function(player, args)
-    sendServerCommand("AdminRadZone", "Clear", {})
+
+function AdminRadZone.init()
+	AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
 end
+Events.OnInitGlobalModData.Add(AdminRadZone.init)
 
-Commands.AdminRadZone.Sync = function(player, args)
-    if not args.x or not args.y or not args.rad then return end
-    sendServerCommand("AdminRadZone", "Sync", {x = args.x, y = args.y, rad = args.rad})
-end
 
-Events.OnClientCommand.Add(function(module, command, player, args)
-    if Commands[module] and Commands[module][command] then
-        Commands[module][command](player, args)
+function AdminRadZone.clientSync(module, command, args) 
+    if module == "AdminRadZone" then             
+        if command == "Sync" and args.data then 
+            ModData.add("AdminRadZoneData", args.data)
+            sendServerCommand("AdminRadZone", "Sync", {data=args.data})
+            sendServerCommand("AdminRadZone", "Msg", {msg = "Data synced"})          
+        elseif command == "Fetch" then 
+            sendServerCommand("AdminRadZone", "Fetch", {data = AdminRadZoneData})          
+        end
     end
-end)
+end 
+Events.OnClientCommand.Add(AdminRadZone.clientSync)
+
