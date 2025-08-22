@@ -12,7 +12,7 @@ Events.OnInitGlobalModData.Add(AdminRadZone.init)
 function AdminRadZone.core(module, command, args) 
     if module == "AdminRadZone" then     
         if command == "Sync" and args.data then
-            AdminRadZone.save("AdminRadZone", args.data)       
+            AdminRadZone.save("AdminRadZoneData", args.data)       
         elseif command == "Msg" then 
             print('AdminRadZone: server msg\n'..tostring(args.msg))
         elseif command == "Fetch" then 
@@ -70,32 +70,12 @@ function AdminRadZone.demo()
     AdminRadZoneData.active = true
     AdminRadZoneData.rounds = 5
     AdminRadZoneData.cooldown = 0
-    AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
+    --AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
     
     AdminRadZone.doTransmit(AdminRadZoneData)
     AdminRadZone.activate(true)
 end
 
-function AdminRadZone.clear()
-    if AdminRadZone.marker then
-        AdminRadZone.marker:remove()
-        AdminRadZone.marker = nil
-    end
-    AdminRadZoneData.x = -1
-    AdminRadZoneData.y = -1
-    AdminRadZoneData.rad = -1
-    AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
-    AdminRadZoneData.active = false
-    AdminRadZoneData.rounds = 0
-    AdminRadZoneData.cooldown = 0
-    AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
-    AdminRadZoneData.active = false
-
-    AdminRadZone.clockStarted = false
-    AdminRadZone.doTransmit(AdminRadZoneData)
-    --AdminRadZone.updateMarker()
-
-end
 
 function AdminRadZone.setXY(data)
     if not data or not data.x or not data.y  then
@@ -193,7 +173,9 @@ function AdminRadZone.save(key, data)
 end
 
 function AdminRadZone.RecieveData(key, data)
-    AdminRadZone.save(key, data)
+    if key == "AdminRadZoneData" or key == "AdminRadZone" then
+        AdminRadZone.save(key, data)
+    end
 end
 Events.OnReceiveGlobalModData.Add(AdminRadZone.RecieveData)
 -----------------------            ---------------------------

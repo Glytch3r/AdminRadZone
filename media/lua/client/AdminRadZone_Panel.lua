@@ -23,6 +23,18 @@ end
 
 function AdminRadZonePanel.OpenPanel()
     if AdminRadZonePanel.instance == nil then
+        AdminRadZoneData.active   = (AdminRadZoneData.active   ~= nil) and AdminRadZoneData.active   or false
+        AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or 0
+        AdminRadZoneData.duration = AdminRadZoneData.duration or 0
+        AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or 0
+        AdminRadZoneData.x        = AdminRadZoneData.x        or -1
+        AdminRadZoneData.y        = AdminRadZoneData.y        or -1
+
+        if AdminRadZone.marker and not AdminRadZoneData.active then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
+
         local x = getCore():getScreenWidth() / 3
         local y = getCore():getScreenHeight() / 2 - 200
         local w = 290
@@ -33,6 +45,7 @@ function AdminRadZonePanel.OpenPanel()
     AdminRadZonePanel.instance:addToUIManager()
     AdminRadZonePanel.instance:setVisible(true)
 end
+
 
 function AdminRadZonePanel.isValid()
     return AdminRadZone.isAdm(getPlayer())
@@ -204,7 +217,8 @@ function AdminRadZonePanel:update()
     local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
     local totalTime = (rounds * roundDuration) + (cooldown * rounds)
     self.totalTimeLabel.name = "Total Duration:\n" .. totalTime .. "s (" .. math.floor(totalTime/60) .. "m " .. (totalTime%60) .. "s)"
-
+    AdminRadZoneData.duration = AdminRadZoneData.duration or 0
+    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown
     local currentCd = AdminRadZoneData.duration or 0
     self.currentTimeLabel:setColor( 0.86,  0.86, 0.67)
 

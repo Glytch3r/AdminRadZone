@@ -30,36 +30,39 @@ function AdminRadZone.getMarkerColor(alpha, pick)
     return colors[pick] or colors[3]
 end
 
-function AdminRadZone.shouldClear()
-    return (AdminRadZoneData.x == -1 and AdminRadZoneData.y == -1 and AdminRadZoneData.rad <= 0) and AdminRadZone.marker ~= nil
-end
 
 -----------------------            ---------------------------
+
 function AdminRadZone.updateMarker()
-    if not AdminRadZoneData or not AdminRadZoneData.active or AdminRadZoneData.rad <= 0 or AdminRadZoneData.rounds == 0 then
+    AdminRadZoneData = AdminRadZoneData or {}
+    AdminRadZoneData.active   = AdminRadZoneData.active   or false
+    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or 0
+    AdminRadZoneData.duration = AdminRadZoneData.duration or 0
+    AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or 0
+    AdminRadZoneData.x        = AdminRadZoneData.x        or -1
+    AdminRadZoneData.y        = AdminRadZoneData.y        or -1
+    AdminRadZoneData.rad      = AdminRadZoneData.rad      or 0
+
+    if not AdminRadZoneData.active or AdminRadZoneData.rad <= 0 or AdminRadZoneData.rounds == -1 then
         if AdminRadZone.marker then
-            AdminRadZoneData.active = 0
-            AdminRadZoneData.cooldown = 0
-            AdminRadZoneData.duration = 0
-            AdminRadZoneData.rounds = 0 
-            AdminRadZoneData.x = -1
-            AdminRadZoneData.y = -1
             AdminRadZone.marker:remove()
             AdminRadZone.marker = nil
         end
         return
     end
-    
+
     if not AdminRadZone.marker then
         local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
         if sq then
             local col = AdminRadZone.getMarkerColor(1)
             AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-                "circle_center", "circle_only_highlight", sq,
+                "AdminRadZone_Border", "circle_only_highlight", sq,
                 col.r, col.g, col.b, true, AdminRadZoneData.rad
             )
         end
-    else
+    end
+
+    if AdminRadZone.marker then
         AdminRadZone.marker:setSize(AdminRadZoneData.rad)
         if AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then 
             AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
@@ -93,8 +96,33 @@ function AdminRadZone.getShrinkRate(rad, rounds)
    
     return rad / roundDuration
 end
+-----------------------            ---------------------------
+function AdminRadZone.clear()
+    if AdminRadZone.marker then
+        AdminRadZone.marker:remove()
+        AdminRadZone.marker = nil
+    end
+    AdminRadZoneData.x = -1
+    AdminRadZoneData.y = -1
+    AdminRadZoneData.rad = -1
+    AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
+    AdminRadZoneData.active = false
+    AdminRadZoneData.rounds = 0
+    AdminRadZoneData.cooldown = 0
+    --AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
+    AdminRadZoneData.active = false
 
+    AdminRadZone.clockStarted = false
+    AdminRadZone.doTransmit(AdminRadZoneData)
+    --AdminRadZone.updateMarker()
+end
 
+--[[ 
+function AdminRadZone.shouldClear()
+    return (AdminRadZoneData.x == -1 and AdminRadZoneData.y == -1 and AdminRadZoneData.rad == -1) and AdminRadZone.marker ~= nil
+end
+ ]]
+-----------------------            ---------------------------
 function AdminRadZone.OnClockUpdate(curSec)
     local pl = getPlayer(); 
     if not pl then return end 
@@ -124,7 +152,6 @@ function AdminRadZone.OnClockUpdate(curSec)
         AdminRadZoneData.shrinkRate =  AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
         AdminRadZoneData.rad = AdminRadZoneData.rad - AdminRadZoneData.shrinkRate
         if AdminRadZoneData.rad < 0 then AdminRadZoneData.rad = 0 end
-        AdminRadZone.updateMarker()
         
         if AdminRadZoneData.rad == 0 then
             AdminRadZoneData.duration = 0
@@ -138,6 +165,8 @@ function AdminRadZone.OnClockUpdate(curSec)
             end
             AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.Cooldown
         end
+        AdminRadZone.updateMarker()
+
     end
 end
 Events.OnClockUpdate.Add(AdminRadZone.OnClockUpdate)
