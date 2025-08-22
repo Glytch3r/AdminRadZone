@@ -3,9 +3,6 @@
 AdminRadZone = AdminRadZone or {}
 LuaEventManager.AddEvent("OnClockUpdate")
 
-function AdminRadZone.isDisabled()
-    return AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 
-end
 
 function AdminRadZone.isPaused()
     return AdminRadZoneData.cooldown > 0
@@ -31,19 +28,16 @@ function AdminRadZone.getMarkerColor(alpha, pick)
 end
 
 
+
 -----------------------            ---------------------------
 
-function AdminRadZone.updateMarker()
-    AdminRadZoneData = AdminRadZoneData or {}
-    AdminRadZoneData.active   = AdminRadZoneData.active   or false
-    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or 0
-    AdminRadZoneData.duration = AdminRadZoneData.duration or 0
-    AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or 0
-    AdminRadZoneData.x        = AdminRadZoneData.x        or -1
-    AdminRadZoneData.y        = AdminRadZoneData.y        or -1
-    AdminRadZoneData.rad      = AdminRadZoneData.rad      or 0
 
-    if not AdminRadZoneData.active or AdminRadZoneData.rad <= 0 or AdminRadZoneData.rounds == -1 then
+
+function AdminRadZone.updateMarker()
+    if AdminRadZone.shouldInit() then
+        AdminRadZone = AdminRadZone.initData()
+    end
+    if not AdminRadZoneData.active or AdminRadZoneData.rad < 0 or AdminRadZoneData.rounds == -1 then
         if AdminRadZone.marker then
             AdminRadZone.marker:remove()
             AdminRadZone.marker = nil
@@ -56,107 +50,67 @@ function AdminRadZone.updateMarker()
         if sq then
             local col = AdminRadZone.getMarkerColor(1)
             AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Border", "circle_only_highlight", sq,
-                col.r, col.g, col.b, true, AdminRadZoneData.rad
-            )
+            "AdminRadZone_Border", "circle_only_highlight", sq,
+            col.r, col.g, col.b, true, AdminRadZoneData.rad)
+            AdminRadZone.shiftColor(AdminRadZone.marker)     
         end
     end
-
+ 
     if AdminRadZone.marker then
-        AdminRadZone.marker:setSize(AdminRadZoneData.rad)
+        AdminRadZone.shiftColor(AdminRadZone.marker)        
+        AdminRadZone.marker:setSize(AdminRadZoneData.rad)    
         if AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then 
             AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
         end
     end
 end
 
-function AdminRadZone.startClock()
-    if AdminRadZone.clockStarted then return end
-    AdminRadZone.clockStarted = true
-    
-    local prevSec = -1
-    if PZCalendar and PZCalendar.getInstance() then
-        prevSec = PZCalendar.getInstance():get(Calendar.SECOND)
-    end
-    function AdminRadZone.tick()
-        if not PZCalendar or not PZCalendar.getInstance() then return end
-        local curSec = PZCalendar.getInstance():get(Calendar.SECOND)
-        if prevSec ~= curSec then
-            triggerEvent("OnClockUpdate", curSec)
-            prevSec = curSec
-        end
-    end
-    Events.OnTick.Add(AdminRadZone.tick)
-end
 
 function AdminRadZone.getShrinkRate(rad, rounds)
     if rounds <= 0 then return 0 end
     local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
-    if roundDuration <= 0 then return 0 end
-   
+    if roundDuration <= 0 then return 0 end   
     return rad / roundDuration
 end
 -----------------------            ---------------------------
-function AdminRadZone.clear()
-    if AdminRadZone.marker then
-        AdminRadZone.marker:remove()
-        AdminRadZone.marker = nil
-    end
-    AdminRadZoneData.x = -1
-    AdminRadZoneData.y = -1
-    AdminRadZoneData.rad = -1
-    AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
-    AdminRadZoneData.active = false
-    AdminRadZoneData.rounds = 0
-    AdminRadZoneData.cooldown = 0
-    --AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
-    AdminRadZoneData.active = false
 
-    AdminRadZone.clockStarted = false
-    AdminRadZone.doTransmit(AdminRadZoneData)
-    --AdminRadZone.updateMarker()
-end
-
---[[ 
-function AdminRadZone.shouldClear()
-    return (AdminRadZoneData.x == -1 and AdminRadZoneData.y == -1 and AdminRadZoneData.rad == -1) and AdminRadZone.marker ~= nil
-end
- ]]
 -----------------------            ---------------------------
 function AdminRadZone.OnClockUpdate(curSec)
-    local pl = getPlayer(); 
-    if not pl then return end 
-    if not AdminRadZoneData or not AdminRadZoneData.active then
+    if not AdminRadZoneData then return end
+
+    if not AdminRadZoneData.active then
         AdminRadZone.updateMarker()
-        return 
-    end
-    -- cd
-    if AdminRadZoneData.cooldown > 0 and AdminRadZoneData.duration == 0 then
-        AdminRadZoneData.cooldown = AdminRadZoneData.cooldown - 1
-        pl:setHaloNote('Cooldown: '..tostring(AdminRadZoneData.cooldown),150,250,150,100) 
-        
-        if AdminRadZoneData.cooldown <= 0 then
-            if AdminRadZoneData.rounds > 0 then
-                AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration
-                AdminRadZoneData.cooldown = 0
-            end
-        end
         return
     end
-    
-    -- active
+
+    if AdminRadZone.isRadZonePaused() then
+        AdminRadZone.updateMarker()
+        return
+    end
+
+    if AdminRadZoneData.cooldown > 0 and AdminRadZoneData.duration == 0 then
+        AdminRadZoneData.cooldown = AdminRadZoneData.cooldown - 1
+
+        if AdminRadZoneData.cooldown <= 0 and AdminRadZoneData.rounds > 0 then
+            AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration
+            AdminRadZoneData.cooldown = 0
+        end
+
+        AdminRadZone.updateMarker()
+        return
+    end
+
     if AdminRadZoneData.duration > 0 and AdminRadZoneData.cooldown == 0 then
         AdminRadZoneData.duration = AdminRadZoneData.duration - 1
-        pl:setHaloNote('Duration: '..tostring(round(AdminRadZoneData.duration)),150,250,150,100) 
-        
-        AdminRadZoneData.shrinkRate =  AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
+
+        AdminRadZoneData.shrinkRate = AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
         AdminRadZoneData.rad = AdminRadZoneData.rad - AdminRadZoneData.shrinkRate
         if AdminRadZoneData.rad < 0 then AdminRadZoneData.rad = 0 end
-        
+
         if AdminRadZoneData.rad == 0 then
             AdminRadZoneData.duration = 0
         end
-        
+
         if AdminRadZoneData.duration <= 0 then
             AdminRadZoneData.rounds = AdminRadZoneData.rounds - 1
             if AdminRadZoneData.rounds <= 0 or AdminRadZoneData.rad == 0 then
@@ -165,8 +119,12 @@ function AdminRadZone.OnClockUpdate(curSec)
             end
             AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.Cooldown
         end
-        AdminRadZone.updateMarker()
 
+        AdminRadZone.updateMarker()
+        return
     end
+
+    AdminRadZone.updateMarker()
 end
+
 Events.OnClockUpdate.Add(AdminRadZone.OnClockUpdate)

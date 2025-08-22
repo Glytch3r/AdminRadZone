@@ -6,8 +6,36 @@ AdminRadZone = AdminRadZone or {}
 
 function AdminRadZone.init()
 	AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
+    return AdminRadZoneData
 end
 Events.OnInitGlobalModData.Add(AdminRadZone.init)
+
+function AdminRadZone.shouldInit()
+    return not AdminRadZoneData or 
+    AdminRadZoneData.active  == nil or
+    AdminRadZoneData.cooldown  == nil or
+    AdminRadZoneData.duration  == nil or
+    AdminRadZoneData.rounds    == nil or
+    AdminRadZoneData.rad       == nil or
+    AdminRadZoneData.x         == nil or
+    AdminRadZoneData.y         == nil 
+end
+
+function AdminRadZone.initData()
+    AdminRadZoneData = AdminRadZone.init() or {}
+    AdminRadZoneData.active   = AdminRadZoneData.active   or false
+    AdminRadZoneData.pause = AdminRadZoneData.pause or false
+    
+    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
+    AdminRadZoneData.duration = AdminRadZoneData.duration or SandboxVars.AdminRadZone.RoundDuration or 60
+
+    
+    AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or SandboxVars.AdminRadZone.DefaultRounds or 5
+    AdminRadZoneData.rad      = AdminRadZoneData.rad      or  SandboxVars.AdminRadZone.DefaultRadius or 50    
+    AdminRadZoneData.x        = AdminRadZoneData.x        or -1
+    AdminRadZoneData.y        = AdminRadZoneData.y        or -1
+    return AdminRadZoneData
+end
 
 function AdminRadZone.core(module, command, args) 
     if module == "AdminRadZone" then     
@@ -29,7 +57,77 @@ function AdminRadZone.core(module, command, args)
 end 
 Events.OnServerCommand.Add(AdminRadZone.core)
 
-function AdminRadZone.setActive(data)
+function AdminRadZone.startClock()
+    if AdminRadZone.clockStarted then return end
+    AdminRadZone.clockStarted = true
+    
+    local prevSec = -1
+    if PZCalendar and PZCalendar.getInstance() then
+        prevSec = PZCalendar.getInstance():get(Calendar.SECOND)
+    end
+    function AdminRadZone.tick()
+        if not PZCalendar or not PZCalendar.getInstance() then return end
+        local curSec = PZCalendar.getInstance():get(Calendar.SECOND)
+        if prevSec ~= curSec then
+            triggerEvent("OnClockUpdate", curSec)
+            prevSec = curSec
+        end
+    end
+    Events.OnTick.Add(AdminRadZone.tick)
+end
+
+
+function AdminRadZone.activate(bool)
+    if AdminRadZone.shouldInit() then
+        AdminRadZone = AdminRadZone.initData()
+    end
+    AdminRadZoneData.active = bool
+    if AdminRadZoneData.active then 
+        AdminRadZone.startClock()
+    else
+        AdminRadZone.clear()
+    end
+    AdminRadZone.save("AdminRadZoneData", AdminRadZoneData)
+    return AdminRadZoneData.active
+end
+-----------------------            ---------------------------
+function AdminRadZone.doTransmit(data)
+    data = data or AdminRadZoneData
+    sendClientCommand(getPlayer(), "AdminRadZone", "Sync", {data=data})
+    ModData.transmit("AdminRadZoneData", data)
+end
+
+function AdminRadZone.save(key, data)
+    if key == "AdminRadZoneData" or key == "AdminRadZone" and data then        
+     
+        for key, value in pairs(data) do
+            AdminRadZoneData[key] = value
+        end
+        for key, _ in pairs(AdminRadZoneData) do
+            if not data[key] then
+                AdminRadZoneData[key] = nil
+            end
+        end
+        if AdminRadZone.shouldInit() then
+            AdminRadZoneData = AdminRadZone.initData()
+        end
+        AdminRadZone.updateMarker()
+        return AdminRadZoneData
+    end
+end
+
+function AdminRadZone.RecieveData(key, data)
+    if key == "AdminRadZoneData" or key == "AdminRadZone" then
+        AdminRadZone.save(key, data)
+    end
+end
+Events.OnReceiveGlobalModData.Add(AdminRadZone.RecieveData)
+-----------------------            ---------------------------
+function AdminRadZone.Fetch()   
+    sendClientCommand(getPlayer(), "AdminRadZone", "Fetch", {})
+end
+-----------------------            ---------------------------
+--[[ function AdminRadZone.setActive(data)
     if not data or not data.active then
         AdminRadZoneData.active = not AdminRadZoneData.active
     else
@@ -44,141 +142,6 @@ function AdminRadZone.setActive(data)
         AdminRadZone.setXY({x=-1,y=-1})
         AdminRadZone.clockStarted = false
     end
-    AdminRadZone.doTransmit(data)
+    --AdminRadZone.doTransmit(data)
 end
-
-function AdminRadZone.demo()
-    if AdminRadZone.marker then
-        AdminRadZone.marker:remove()
-        AdminRadZone.marker = nil
-    end
-    
-    local pl = getPlayer() 
-    local x, y = -1, -1
-    if pl then
-        x, y = round(pl:getX()),  round(pl:getY())
-    end
-    
-    if x and y then
-        AdminRadZoneData.x = x
-        AdminRadZoneData.y = y
-    end
-    
-    AdminRadZoneData.rad = 5
-    AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
-
-    AdminRadZoneData.active = true
-    AdminRadZoneData.rounds = 5
-    AdminRadZoneData.cooldown = 0
-    --AdminRadZoneData.shrinkRate = SandboxVars.AdminRadZone.ShrinkRate or 1
-    
-    AdminRadZone.doTransmit(AdminRadZoneData)
-    AdminRadZone.activate(true)
-end
-
-
-function AdminRadZone.setXY(data)
-    if not data or not data.x or not data.y  then
-        AdminRadZoneData.x = -1
-        AdminRadZoneData.y = -1
-    else
-        AdminRadZoneData.x = data.x
-        AdminRadZoneData.y = data.y
-    end
-    AdminRadZone.updateMarker()
-    AdminRadZone.doTransmit(data)
-end
-
-function AdminRadZone.setRad(data)
-    if not data or not data.rad then
-        AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 50
-    else
-        AdminRadZoneData.rad = data.rad
-    end
-    AdminRadZone.updateMarker()
-    AdminRadZone.doTransmit(data)
-end
-
-function AdminRadZone.setduration(data)
-    if not data or not data.duration then
-        AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 50
-    else
-        AdminRadZoneData.duration = data.duration
-    end
-    AdminRadZone.doTransmit(data)
-end
-
-function AdminRadZone.setRounds(data)
-    if not data or not data.rounds then
-        AdminRadZoneData.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
-    else
-        AdminRadZoneData.rounds = data.rounds
-    end
-    AdminRadZone.doTransmit(data)
-end
-
-function AdminRadZone.setCooldown(data)
-    if not data or not data.cooldown then
-        AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.DefaultCooldown or 60
-    else
-        AdminRadZoneData.cooldown = data.cooldown
-    end
-    AdminRadZone.doTransmit(data)
-end
-
-function AdminRadZone.isCanActive()
-    return AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 and AdminRadZoneData.rad ~= -1
-end
-
-function AdminRadZone.activate(bool)
-    AdminRadZoneData.active = bool
-    if AdminRadZoneData.active then 
-        --AdminRadZoneData.timestamp = getTimestampMs()
-        AdminRadZone.startClock()
-        AdminRadZone.updateMarker()
-    else
-        AdminRadZone.clear()
-    end
-    AdminRadZone.save("AdminRadZoneData", AdminRadZoneData)
-    
-end
-
-function AdminRadZone.doTransmit(data)
-    AdminRadZone.sync(data)
-    ModData.transmit("AdminRadZoneData", data)
-end
-
-function AdminRadZone.sync(data)
-    data = data or AdminRadZoneData
-    sendClientCommand(getPlayer(), "AdminRadZone", "Sync", {data=data})
-end
-
-function AdminRadZone.save(key, data)
-    if key == "AdminRadZoneData" or key == "AdminRadZone" then
-        local function StoreData(clientTable, serverTable)
-            if not clientTable or not serverTable then return {} end
-            for key, value in pairs(serverTable) do
-                clientTable[key] = value
-            end
-            for key, _ in pairs(clientTable) do
-                if not serverTable[key] then
-                    clientTable[key] = nil
-                end
-            end
-            return clientTable
-        end
-        AdminRadZoneData = StoreData(AdminRadZoneData, data)
-        AdminRadZone.updateMarker()
-    end
-end
-
-function AdminRadZone.RecieveData(key, data)
-    if key == "AdminRadZoneData" or key == "AdminRadZone" then
-        AdminRadZone.save(key, data)
-    end
-end
-Events.OnReceiveGlobalModData.Add(AdminRadZone.RecieveData)
------------------------            ---------------------------
-function AdminRadZone.Fetch()   
-    sendClientCommand(getPlayer(), "AdminRadZone", "Fetch", {})
-end
+ ]]

@@ -53,35 +53,40 @@ function AdminRadZone.isOutOfBound(pl)
     local distSq = dx * dx + dy * dy
     return distSq > (rad * rad)
 end
+
 function AdminRadZone.RadiationEffects(curSec)
     local pl = getPlayer()
     if not pl then return end 
     local stats = pl:getStats()
     if not stats then return end 
-    if not AdminRadZone.isOutOfBound(pl) then 
-        AdminRadZone.setGreenFog(false)
-        return
-    else
-        AdminRadZone.setGreenFog(true)
-    end     
+
     local RadDamage = SandboxVars.AdminRadZone.RadDamage or 8.5
     RadDamage = math.min(1, math.max(0, stats:getSickness()+(RadDamage / 100)))
     stats:setSickness(RadDamage)
     if stats:getSickness() > 0.2 then
         if ticks % 3 == 0 then 
-            AdminRadZone.doRadSpr()
+            if SandboxVars.AdminRadZone.doRadFloorVisual then
+                AdminRadZone.doRadSpr()
+            end
         end
         if ticks % 10 == 0 then 
-            pl:setWearingNightVisionGoggles(true)
-            pl:startMuzzleFlash()
-            AdminRadZone.pauseForSeconds(1, function() 
-                pl:setWearingNightVisionGoggles(false)  
-            end)
+            if SandboxVars.AdminRadZone.doNVG then
+                AdminRadZone.doRadNvg()
+            end
         end
     end
 end
+
 Events.OnClockUpdate.Add(AdminRadZone.RadiationEffects)
 
+function AdminRadZone.doRadNvg()
+    local pl = getPlayer() 
+    pl:setWearingNightVisionGoggles(true)
+    pl:startMuzzleFlash()
+    AdminRadZone.pauseForSeconds(1, function() 
+        pl:setWearingNightVisionGoggles(false)  
+    end)
+end
 function AdminRadZone.pauseForSeconds(seconds, callback)
     local start = getTimestampMs()
     local duration = seconds * 1000
@@ -101,6 +106,7 @@ function AdminRadZone.getRadColor(pick)
     pick = pick or SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor or 5
    return AdminRadZone.getMarkerColor(1, pick)
 end
+
 function AdminRadZone.doSledge(obj)
     if isClient() then
         sledgeDestroy(obj)
@@ -114,6 +120,7 @@ function AdminRadZone.doSledge(obj)
         end
     end
 end
+
 function AdminRadZone.doRadSpr()
     local pl = getPlayer()
     if not pl then return end 
@@ -147,69 +154,3 @@ function AdminRadZone.doRadSpr()
     end)
 end
 
-
-
-function AdminRadZone.FogHandler()
-
-    local pl = getPlayer()
-    if not pl then return end 
-    
-    local top = ImprovedFog.getTopAlphaHeight()
-    local bot = ImprovedFog.getBottomAlphaHeight()    
-    local circle = ImprovedFog.getAlphaCircleAlpha()
-    local alpha = ImprovedFog.getBaseAlpha()
-    
-    ImprovedFog.setEnableEditing(true)
-    ImprovedFog.setColorR(0.2); 
-    ImprovedFog.setColorG(0.9); 
-    ImprovedFog.setColorB(0.4);
-    
-
-    if alpha and alpha == 1 then 
-        ImprovedFog.setAlphaCircleAlpha(0);   
-        ImprovedFog.setBaseAlpha(0.7) 
-    else
-        ImprovedFog.setBaseAlpha(alpha+0.001) 
-        ImprovedFog.setAlphaCircleAlpha(circle+0.001);
-    end
-    
-    if top and top ~= 1 then 
-        ImprovedFog.setTopAlphaHeight(top+0.0001) 
-    else
-        ImprovedFog.setTopAlphaHeight(0.6) 
-    end
-
-    if bot and bot ~= 0.6 then 
-        ImprovedFog.getBottomAlphaHeight(bot-0.0001) 
-    else
-        ImprovedFog.getBottomAlphaHeight(1) 
-    end
-
-end
-
-function AdminRadZone.radZone(active)
-    local clim = getClimateManager()
-    if not clim then return end
-
-    local fogFloat = clim:getClimateFloat(ClimateManager.FLOAT_FOG_INTENSITY)
-    if fogFloat then
-        fogFloat:setEnableAdmin(active)
-        if active then
-            fogFloat:setAdminValue(0.8) -- heavy fog
-        end
-    end
-
-    ImprovedFog.setHighQuality(active)
-    
-    if active then
-
-
-        local col = AdminRadZone.getRadColor(5)
-        AdminRadZone.startFogTransition(600, {r=col.r, g=col.g, b=col.b, a1=0.7, a2=0.4})
-
-    else
-        --rever
-    end
-
-    print("Foggy green weather " .. (active and "activated" or "disabled") .. " locally")
-end

@@ -7,6 +7,61 @@ AdminRadZonePanel = ISPanel:derive("AdminRadZonePanel")
 --[[ 
 AdminRadZonePanel.TogglePanel()
  ]]
+
+
+AdminRadZone.PausedColor   = {r=1.0, g=0.85, b=0.2,  a=0.8} -- yellow
+AdminRadZone.CooldownColor = {r=0.4, g=0.8,  b=1.0,  a=0.8} -- light blue
+AdminRadZone.InactiveColor = {r=0.5, g=0.5,  b=0.5,  a=0.8} -- gray
+AdminRadZone.ActiveColor   = {r=0.2, g=0.85, b=0.2,  a=0.8} -- green
+
+function AdminRadZone.getPanelColor(int)
+    int = int or AdminRadZone.getStatusInt()
+    local tab = {
+        [0] = {r=1, g=1, b=1, a=0.5},             -- default/fallback
+        [1] = AdminRadZone.PausedColor,           -- paused
+        [2] = AdminRadZone.CooldownColor,         -- cooldown
+        [3] = AdminRadZone.InactiveColor,         -- ready/inactive
+        [4] = AdminRadZone.ActiveColor,           -- active
+    }
+    return tab[int] or AdminRadZone.InactiveColor
+end
+
+function AdminRadZone.isRadZonePaused()
+    AdminRadZoneData.paused = AdminRadZoneData.paused or false
+    return AdminRadZone.marker ~= nil and AdminRadZoneData.active and AdminRadZoneData.paused == true
+end
+
+function AdminRadZone.isRadZoneCooldown()
+    return AdminRadZone.marker ~= nil and AdminRadZoneData.active and AdminRadZoneData.cooldown > 0
+end
+
+function AdminRadZone.isRadZoneReady()
+    return AdminRadZone.marker == nil and not AdminRadZoneData.active and AdminRadZoneData.duration > 0 and AdminRadZoneData.rounds > 0 and  AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 and AdminRadZoneData.rad > 0
+end
+
+function AdminRadZone.isRadZoneActive()
+    return AdminRadZone.marker ~= nil and AdminRadZoneData.active and AdminRadZoneData.duration > 0 and AdminRadZoneData.rounds > 0 and AdminRadZoneData.rad > 0
+end
+function AdminRadZone.getStatusInt()
+    if AdminRadZone.isRadZonePaused() then return 1 end
+    if AdminRadZone.isRadZoneCooldown() then return 2 end
+    if AdminRadZone.isRadZoneReady() then return 3 end
+    if AdminRadZone.isRadZoneActive() then return 4 end
+    return 0
+end
+-----------------------            ---------------------------
+
+function AdminRadZone.shiftColor(marker)
+    marker = marker or AdminRadZone.marker
+    if not marker then return end
+    local statusColor = AdminRadZone.getPanelColor()
+    local r,g,b = statusColor.r, statusColor.g, statusColor.b
+    if marker:getR() ~= r then marker:setR(r) end
+    if marker:getG() ~= g then marker:setG(g) end
+    if marker:getB() ~= b then marker:setB(b) end
+end
+
+-----------------------            ---------------------------
 function AdminRadZone.isAdm(pl)
     pl = pl or getPlayer()
     if not pl then return false end
@@ -23,13 +78,9 @@ end
 
 function AdminRadZonePanel.OpenPanel()
     if AdminRadZonePanel.instance == nil then
-        AdminRadZoneData.active   = (AdminRadZoneData.active   ~= nil) and AdminRadZoneData.active   or false
-        AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or 0
-        AdminRadZoneData.duration = AdminRadZoneData.duration or 0
-        AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or 0
-        AdminRadZoneData.x        = AdminRadZoneData.x        or -1
-        AdminRadZoneData.y        = AdminRadZoneData.y        or -1
-
+        if AdminRadZone.shouldInit() then
+            AdminRadZone = AdminRadZone.initData()
+        end
         if AdminRadZone.marker and not AdminRadZoneData.active then
             AdminRadZone.marker:remove()
             AdminRadZone.marker = nil
@@ -212,21 +263,23 @@ function AdminRadZonePanel:update()
 
     self.xyLabel.name = "Coordinates:\nX:" .. tostring(x).."\nY:".. tostring(y)    
 
+
+
     local rounds = tonumber(self.roundsEntry:getText()) or SandboxVars.AdminRadZone.DefaultRounds 
     local cooldown = tonumber(self.cooldownEntry:getText()) or 60
     local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
     local totalTime = (rounds * roundDuration) + (cooldown * rounds)
     self.totalTimeLabel.name = "Total Duration:\n" .. totalTime .. "s (" .. math.floor(totalTime/60) .. "m " .. (totalTime%60) .. "s)"
-    AdminRadZoneData.duration = AdminRadZoneData.duration or 0
-    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown
-    local currentCd = AdminRadZoneData.duration or 0
+    AdminRadZoneData.duration = AdminRadZoneData.duration or SandboxVars.AdminRadZone.RoundDuration or 60
+    AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
+    local currentCd = AdminRadZoneData.duration 
     self.currentTimeLabel:setColor( 0.86,  0.86, 0.67)
-
+    
     if cooldown <= 0 then
         currentCd = AdminRadZoneData.cooldown or 0
         self.currentTimeLabel:setColor(0.61,  0.86, 1.0)
     end
-    self.currentTimeLabel.name = "Round Time: "..tostrintg(currentCd)
+    self.currentTimeLabel.name = "Round Time: "..tostring(currentCd)
 end
 
 function AdminRadZonePanel.onCooldownChange()
@@ -290,7 +343,7 @@ function AdminRadZonePanel:onStartStop()
         AdminRadZoneData.duration = SandboxVars.AdminRadZone.RoundDuration or 60
 
         AdminRadZone.activate(true)
-        AdminRadZone.doTransmit(AdminRadZoneData)--[[  ]]
+        AdminRadZone.doTransmit(AdminRadZoneData)
     end
     print(AdminRadZoneData.active)
 end

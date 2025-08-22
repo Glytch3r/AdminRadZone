@@ -2,11 +2,6 @@
 
 AdminRadZone = AdminRadZone or {}
 
-function AdminRadZone.sync(data)
-    data = data or AdminRadZoneData
-    ModData.transmit("AdminRadZoneData", data)
-end
-
 
 -----------------------            ---------------------------
 -----------------------            ---------------------------
