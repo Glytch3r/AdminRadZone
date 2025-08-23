@@ -1,0 +1,24 @@
+ yellows are all variable that are live 
+cooldown is the actual time during cooldown that counts down 
+as it reaches 0 duration will be set from 0 to the sandbox duration (red)
+then its the same 
+as soon as duration hits 0 cooldown will be set 
+so when cooldown is >0 then status is on cooldown
+when duration is > 0 then the radiation zone is moving radius -1 per second based on custom Events "OnClockUpdate"
+apply actually sets the rounds and the radius to the AdminRadZoneData
+total time = (rounds * cooldown) + (rounds * duration)
+pause and play changes its text depending on what the status is
+
+shrinkrate is auto computed based on the number of rounds , and radius, this can be done since we know everything moves per real life seconds
+
+status:
+Paused - prevents the duration and the cooldown from getting reduced, also prevents the radius from shrinking system is basically on halt
+cooldown - prevents circle from shrinking 
+inactive - marker isnt showing, variables are ready 
+active - actively moving as normal. radius is shrinking , and either cooldwon or duration gets -1 
+
+buttons
+clear button clears the marker and re initiatlize the data using AdminRadZone.clear()
+apply - simply sends the variables to the server sends marker x and y not player x and yellow
+select square - uses marker x and y now copies current player x and yellow then send sync 
+teleport - simple teleports character to the AdminRadZone.Marker x and y

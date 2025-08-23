@@ -3,19 +3,36 @@
 AdminRadZone = AdminRadZone or {}
 
 -----------------------            ---------------------------
+function AdminRadZone.isAdm(pl)
+    pl = pl or getPlayer()
+    if not pl then return false end
+    return isClient() and string.lower(pl:getAccessLevel()) == "admin"
+end
+
 
 function AdminRadZone.context(player, context, worldobjects, test)
 	local pl = getSpecificPlayer(player)
 	local sq = clickedSquare
+	if not pl then return end 
 	if not AdminRadZone.isAdm(pl) then return end
-	local title = ""
 	
 	
 	local x, y = round(pl:getX()), round(pl:getY())
 
-	if 	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
+	if  getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
 		if not x or not y then return end
  
+		context:addOption("Sync", worldobjects, function()
+            AdminRadZone.Fetch()   
+			getSoundManager():playUISound("UIActivateMainMenuItem")
+			context:hideAndChildren()
+		end)
+
+		context:addOption("Fetch", worldobjects, function()
+            AdminRadZone.Fetch()   
+			getSoundManager():playUISound("UIActivateMainMenuItem")
+			context:hideAndChildren()
+		end)
 
         local tip = ISWorldObjectContextMenu.addToolTip()
 		local mainMenu = "Admin Radiation Zone: "..tostring(title)
@@ -39,3 +56,4 @@ function AdminRadZone.context(player, context, worldobjects, test)
 end
 Events.OnFillWorldObjectContextMenu.Remove(AdminRadZone.context)
 Events.OnFillWorldObjectContextMenu.Add(AdminRadZone.context)
+
