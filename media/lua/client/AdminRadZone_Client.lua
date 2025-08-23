@@ -23,6 +23,11 @@ function AdminRadZone.clear()
         AdminRadZone.tempMarker:remove()
         AdminRadZone.tempMarker = nil
     end
+
+    if AdminRadZone.SickMarker then
+        AdminRadZone.SickMarker:remove()
+        AdminRadZone.SickMarker = nil
+    end
     
     AdminRadZone.clearZone()
     print("Client: AdminRadZone cleared")
@@ -43,6 +48,8 @@ end
 
 function AdminRadZone.doTransmit(data)
     sendServerCommand("AdminRadZone", "Sync", {data = data or AdminRadZoneData})
+    ModData.transmit("AdminRadZoneData")
+
 end
 
 function AdminRadZone.isAdm(player)
@@ -53,7 +60,7 @@ end
 function AdminRadZone.initData()
     AdminRadZoneData.pause = AdminRadZoneData.pause or false
     AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
-    AdminRadZoneData.duration = AdminRadZoneData.duration or 0
+    AdminRadZoneData.duration = AdminRadZoneData.duration or SandboxVars.AdminRadZone.RoundDuration or 60
     AdminRadZoneData.state = AdminRadZoneData.state or "inactive"
     AdminRadZoneData.rounds   = AdminRadZoneData.rounds   or SandboxVars.AdminRadZone.DefaultRounds or 5
     AdminRadZoneData.rad      = AdminRadZoneData.rad      or  SandboxVars.AdminRadZone.DefaultRadius or 4    
@@ -104,18 +111,7 @@ function AdminRadZone.onCreatePlayer()
 end
 
 Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
-
-function AdminRadZone.updateClientMarker()
-    if not AdminRadZoneData then return end
-    
-    if AdminRadZone.isIncomplete() or AdminRadZoneData.state == "inactive" then
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        return
-    end
-    
+--[[ 
     if not AdminRadZone.marker and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then
         local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
         if sq then
@@ -127,6 +123,35 @@ function AdminRadZone.updateClientMarker()
     end
     if AdminRadZone.marker then
         AdminRadZone.shiftColor(AdminRadZone.marker)
+        if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
+            AdminRadZone.marker:setSize(AdminRadZoneData.rad)
+        end
+        if round(AdminRadZone.marker:getX()) ~= round(AdminRadZoneData.x) or round(AdminRadZone.marker:getY()) ~= round(AdminRadZoneData.y) then
+            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
+        end
+    end
+ ]]
+function AdminRadZone.updateClientMarker()
+    getPlayer():setHaloNote(tostring('updated'),150,250,150,900) 
+    if not AdminRadZoneData then return end
+    
+    if AdminRadZoneData.state == "inactive" then
+        if AdminRadZone.marker then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
+    end
+    if AdminRadZoneData.state == "active" or  AdminRadZoneData.state == "cooldown" or  AdminRadZoneData.state == "pause"  then
+        if not AdminRadZone.marker  then
+            local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
+            if sq then
+                local col = AdminRadZone.getMarkerColor(1)
+                AdminRadZone.marker = getWorldMarkers():addGridSquareMarker( "AdminRadZone_Border", "circle_only_highlight", sq, col.r, col.g, col.b, true, AdminRadZoneData.rad)
+            end
+        end
+    end
+    
+    if AdminRadZone.marker then
         if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
             AdminRadZone.marker:setSize(AdminRadZoneData.rad)
         end
@@ -208,6 +233,10 @@ function AdminRadZone.clearZone()
     if isClient() then
         sendServerCommand("AdminRadZone", "Clear", {})
     end
+    if AdminRadZone.marker then
+        AdminRadZone.marker:remove()
+        AdminRadZone.marker = nil
+    end
     AdminRadZone.doTransmit(AdminRadZoneData)
 
 end
@@ -260,6 +289,7 @@ function AdminRadZone.core(module, command, args)
         elseif command == "Clear" and args.data then
             AdminRadZoneData.state = "inactive" 
             AdminRadZone.clearZone()
+            
         elseif command == "Msg" and args.msg then 
             print('AdminRadZone Server:\n'..tostring(args.msg))
         elseif command == "Fetch" and args.data then 

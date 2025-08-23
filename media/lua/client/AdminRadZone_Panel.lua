@@ -13,6 +13,9 @@ function AdminRadZonePanel:new(x, y, width, height)
     return o
 end
 
+
+
+
 function AdminRadZonePanel:initialise()
     ISPanel.initialise(self)
 
@@ -53,6 +56,7 @@ function AdminRadZonePanel:initialise()
     self.roundsEntry = ISTextEntryBox:new(tostring(cRound), margin + 60, y - 2, entryWidth, 18)
     self.roundsEntry:initialise()
     self.roundsEntry:instantiate()
+	self.roundsEntry:setOnlyNumbers(true);
     self.roundsEntry.onTextChange = function() self:onRoundsChange() end
     self:addChild(self.roundsEntry)
     
@@ -62,21 +66,34 @@ function AdminRadZonePanel:initialise()
     
     self.radiusLabel = ISLabel:new(margin, y, labelHeight, "Radius:", 1, 1, 1, 1, UIFont.Medium, true)
     self:addChild(self.radiusLabel)
-    
+
     local cRad = SandboxVars.AdminRadZone.DefaultRadius or 4
     if isActive then
         cRad = AdminRadZoneData.rad
     end
+
+    self.radSlider = ISSliderPanel:new(margin + 65, y , 65 , 10, self, function(_, v)
+        self.tempRad = v
+        if AdminRadZone.tempMarker then
+            AdminRadZone.tempMarker:setSize(self.tempRad)
+        end
+        self.didChange = true
+        self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad)
+    end)
+
+    self.radSlider:initialise()
+    self.radSlider:setValues(-1, 794, 1, 2.5, true) 
+    self.radSlider:setCurrentValue(cRad, true)
+
     
-    self.radiusEntry = ISTextEntryBox:new(tostring(cRad), margin + 60, y - 2, entryWidth, 18)
-    self.radiusEntry:initialise()
-    self.radiusEntry:instantiate()
-    self.radiusEntry.onTextChange = function() self:onRadiusChange() end
-    self:addChild(self.radiusEntry)
+
     
-    self.currentRadiusLabel = ISLabel:new(margin + 140, y, labelHeight, "Radius: 0", 0.8, 0.2, 0.2, 1, UIFont.Small, true)
+    self:addChild(self.radSlider)
+
+    self.currentRadiusLabel = ISLabel:new(margin + 140, y, labelHeight, "Radius: " .. tostring(cRad), 0.8, 0.2, 0.2, 1, UIFont.Small, true)
     self:addChild(self.currentRadiusLabel)
-    y = y + spacing +10
+    y = y + spacing + 10
+
     
     self.totalTimeLabel = ISLabel:new(margin, y, labelHeight, "Total Time:", 1, 1, 1, 1, UIFont.Medium, true)
     self:addChild(self.totalTimeLabel)
@@ -156,6 +173,7 @@ function AdminRadZonePanel:initialise()
     self.tempY = round(getPlayer():getY())
 
 end
+--[[ 
 function AdminRadZonePanel:onRadiusChange()
     self.tempRad = tonumber(self.radiusEntry:getText()) or 5
     if AdminRadZone.tempMarker and self.tempRad then
@@ -173,7 +191,7 @@ function AdminRadZonePanel:onRadiusChange()
         end
     end
 end
-
+ ]]
 
 function AdminRadZonePanel:onRoundsChange()
     self.tempRounds = tonumber(self.roundsEntry:getText()) or 5
@@ -201,7 +219,6 @@ function AdminRadZonePanel:onXY()
    -- AdminRadZone.doTransmit(AdminRadZoneData)
 
 end
-
 function AdminRadZonePanel.onExit()
     AdminRadZonePanel.ClosePanel()    
 end
@@ -223,11 +240,12 @@ function AdminRadZonePanel:doApply()
         AdminRadZoneData.y =  self.tempY
     end
    if self.tempRad then
-
+       
         AdminRadZoneData.rad = self.tempRad
     end
     if self.tempRounds then
-        AdminRadZoneData.rounds = self.tempRounds
+       
+        AdminRadZoneData.rounds = self.tempRounds or  self.roundsEntry: getInternalText()
     end    
 end
 function AdminRadZonePanel:onApply()
@@ -298,12 +316,12 @@ function AdminRadZonePanel:update()
     self.markerCoordLabel.name = "marker:\n" .. mx .. "  x  " .. my
     
     self.currentRoundLabel.name = "Round: " .. AdminRadZoneData.rounds
+    self.tempRad = self.radSlider.currentValue or SandboxVars.AdminRadZone.DefaultRadius or 4
 
-    self.tempRad = tonumber(self.radiusEntry:getText()) or startingRounds
     local currentRadius = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4 
-    self.currentRadiusLabel.name = "Current: " .. currentRadius 
+    self.currentRadiusLabel.name = "Current: " .. tostring(self.tempRad)
     
-    self.tempRounds = tonumber(self.roundsEntry:getText()) or startingRounds
+    self.tempRounds = tonumber(self.roundsEntry:getText())
 
     local cooldownTime = SandboxVars.AdminRadZone.Cooldown or 60
     local durationTime = SandboxVars.AdminRadZone.RoundDuration or 60
@@ -371,20 +389,12 @@ function AdminRadZonePanel:update()
         if sq then
             local col = AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
             AdminRadZone.tempMarker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Highlight", "", sq,
-                col.r, col.g, col.b, true, self.tempRad
+                "AdminRadZone_Highlight", "AdminRadZone_Highlight", sq,
+                1, 0.2, 0.2, true, self.tempRad
             )
         end
     else        
- --[[        if self.tempX and self.tempY  then
-            AdminRadZone.tempMarker:setPos(self.tempX, self.tempY, pl:getZ())
-        else
-            AdminRadZone.tempMarker:setPos(self.tempX, self.tempY, pl:getZ())
-        end
 
-        if self.tempSize then
-            AdminRadZone.tempMarker:setSize(self.tempSize)
-        end ]]
     end
 
 end
@@ -425,7 +435,7 @@ function AdminRadZonePanel.OpenPanel()
     if not AdminRadZonePanel.instance then
         local x = getCore():getScreenWidth() / 3
         local y = getCore():getScreenHeight() / 2 - 200
-        local w, h = 290, 400
+        local w, h = 270, 400
         AdminRadZonePanel.instance = AdminRadZonePanel:new(x, y, w, h)
         AdminRadZonePanel.instance:initialise()
     end

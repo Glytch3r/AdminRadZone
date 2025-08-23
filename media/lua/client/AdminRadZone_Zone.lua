@@ -37,97 +37,7 @@ function AdminRadZone.floor(n)
     return math.floor(n + 0.5) 
 end
 -----------------------            ---------------------------
-local ticks = 0
-function AdminRadZone.RadiationMarker()
-    ticks = ticks + 1
-    if ticks % 2 ~= 0 then return end
 
-    local pl = getPlayer()
-    if not pl then return end
-
-    if AdminRadZoneData.state == "inactive" then
-        if AdminRadZone.SickMarker then
-            AdminRadZone.SickMarker:remove()
-            AdminRadZone.SickMarker = nil
-        end
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        return
-    end
-
-    if AdminRadZone.isOutOfBound(pl) then
-        if not AdminRadZone.SickMarker then
-            local sq = pl:getCurrentSquare()
-            if sq then
-                local col = AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
-                AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(
-                    "AdminRadZone_Highlight", "", sq,
-                    col.r, col.g, col.b, true, 0.4
-                )
-            end
-        else
-            AdminRadZone.SickMarker:setPos(pl:getX(), pl:getY(), pl:getZ())
-            AdminRadZone.SickMarker:setSize(ticks / 10)
-        end
-    else
-        if AdminRadZone.SickMarker then
-            AdminRadZone.SickMarker:remove()
-            AdminRadZone.SickMarker = nil
-        end
-    end
-
-    if not AdminRadZone.marker and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then
-        local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        if sq then
-            local col = AdminRadZone.getMarkerColor(1)
-            AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Border", "circle_only_highlight", sq,
-                col.r, col.g, col.b, true, AdminRadZoneData.rad
-            )
-        end
-    end
-
-    if AdminRadZone.marker then
-        AdminRadZone.shiftColor(AdminRadZone.marker)
-        if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
-            AdminRadZone.marker:setSize(AdminRadZoneData.rad)
-        end
-        if round(AdminRadZone.marker:getX()) ~= round(AdminRadZoneData.x)
-        or round(AdminRadZone.marker:getY()) ~= round(AdminRadZoneData.y) then
-            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        end
-    end
-
-    if AdminRadZone.isOutOfBound(pl) then
-        local stats = pl:getStats()
-        if stats then
-            local RadDamage = SandboxVars.AdminRadZone.RadDamage or 8.5
-            RadDamage = math.min(1, math.max(0, stats:getSickness() + (RadDamage / 100)))
-            stats:setSickness(RadDamage)
-
-            if stats:getSickness() > 0.2 then
-                if ticks % 3 == 0 and SandboxVars.AdminRadZone.doRadFloorVisual then
-                    AdminRadZone.doRadSpr()
-                end
-                if ticks % 5 == 0 and SandboxVars.AdminRadZone.doNVG then
-                    AdminRadZone.doRadNvg()
-                end
-            end
-        end
-    end
-
-    if ticks >= 10 then ticks = 0 end
-end
-
-Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
-
-
-
-
------------------------            ---------------------------
---[[ 
 local ticks = 0
 function AdminRadZone.RadiationMarker()
     ticks = ticks + 1
@@ -169,28 +79,7 @@ function AdminRadZone.RadiationMarker()
             AdminRadZone.SickMarker = nil
         end
     end
-    -----------------------       fix this     ---------------------------
-
-    if not AdminRadZone.marker and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then
-        local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        if sq then
-            local col = AdminRadZone.getMarkerColor(1)
-            AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Border", "circle_only_highlight", sq,
-                col.r, col.g, col.b, true, AdminRadZoneData.rad)
-        end
-    end
-    if AdminRadZone.marker then
-        AdminRadZone.shiftColor(AdminRadZone.marker)
-        if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
-            AdminRadZone.marker:setSize(AdminRadZoneData.rad)
-        end
-        if round(AdminRadZone.marker:getX()) ~= round(AdminRadZoneData.x) or round(AdminRadZone.marker:getY()) ~= round(AdminRadZoneData.y) then
-            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        end
-    end
-
-
+    
     -----------------------            ---------------------------
     if AdminRadZone.isOutOfBound(pl) then 
         local stats = pl:getStats()
@@ -213,7 +102,7 @@ function AdminRadZone.RadiationMarker()
 
 end
 Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
- ]]
+
  function AdminRadZone.isOutOfBound(pl)
     if not AdminRadZoneData then return false end
     

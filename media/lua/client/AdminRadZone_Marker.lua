@@ -13,9 +13,6 @@ function AdminRadZone.shiftColor(marker)
 end
 
 
-function AdminRadZone.isPaused()
-    return AdminRadZoneData.cooldown > 0
-end
 
 --[[ 
 function AdminRadZone.getMarkerColor(alpha, pick)

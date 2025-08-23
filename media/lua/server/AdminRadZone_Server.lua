@@ -12,8 +12,7 @@ function AdminRadZone.initServer()
     if not AdminRadZoneData.x then
         AdminRadZone.clearServer()
     end
-    
-    print("Server: AdminRadZone initialized")
+
 end
 
 Events.OnInitGlobalModData.Add(AdminRadZone.initServer)
@@ -33,7 +32,7 @@ function AdminRadZone.startServerClock()
         end
     end
     Events.OnTick.Add(AdminRadZone.serverTick)
-    print("Server: Clock started")
+
 end
 
 Events.OnServerStarted.Add(AdminRadZone.startServerClock)
@@ -105,6 +104,7 @@ end
 
 function AdminRadZone.syncToAllClients()
     ModData.transmit("AdminRadZoneData")
+    sendServerCommand( "AdminRadZone", "Sync", {data = AdminRadZoneData})
 end
 
 function AdminRadZone.save(key, data)

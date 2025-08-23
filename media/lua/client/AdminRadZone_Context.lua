@@ -22,17 +22,6 @@ function AdminRadZone.context(player, context, worldobjects, test)
 	if  getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
 		if not x or not y then return end
  
-		context:addOption("Sync", worldobjects, function()
-            AdminRadZone.Fetch()   
-			getSoundManager():playUISound("UIActivateMainMenuItem")
-			context:hideAndChildren()
-		end)
-
-		context:addOption("Fetch", worldobjects, function()
-            AdminRadZone.Fetch()   
-			getSoundManager():playUISound("UIActivateMainMenuItem")
-			context:hideAndChildren()
-		end)
 
         local tip = ISWorldObjectContextMenu.addToolTip()
 		local mainMenu = "Admin Radiation Zone: "..tostring(AdminRadZoneData.state)
