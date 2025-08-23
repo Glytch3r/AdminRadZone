@@ -35,7 +35,7 @@ function AdminRadZone.context(player, context, worldobjects, test)
 		end)
 
         local tip = ISWorldObjectContextMenu.addToolTip()
-		local mainMenu = "Admin Radiation Zone: "..tostring(title)
+		local mainMenu = "Admin Radiation Zone: "..tostring(AdminRadZoneData.state)
 		local Main = context:addOptionOnTop(tostring(mainMenu), worldobjects, function()
             AdminRadZonePanel.TogglePanel()
 			getSoundManager():playUISound("UIActivateMainMenuItem")
