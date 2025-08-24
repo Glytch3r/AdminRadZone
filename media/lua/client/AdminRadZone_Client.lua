@@ -132,7 +132,7 @@ Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
     end
  ]]
 function AdminRadZone.updateClientMarker()
-    getPlayer():setHaloNote(tostring('updated'),150,250,150,900) 
+    --getPlayer():setHaloNote(tostring('updated'),150,250,150,900) 
     if not AdminRadZoneData then return end
     
     if AdminRadZoneData.state == "inactive" then
@@ -278,7 +278,7 @@ function AdminRadZone.core(module, command, args)
             for key, value in pairs(args.data) do
                 AdminRadZoneData[key] = value
             end
-            print("Client: Received sync from server")
+            --print("Client: Received sync from server")
             AdminRadZone.updateClientMarker()
         elseif command == "Run" and (args.x or args.y or args.rad or args.rounds) then
             AdminRadZoneData.state = "active" 

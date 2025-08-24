@@ -10,12 +10,7 @@ end
 Events.OnClockUpdate.Remove(AdminRadZone.verbose)
 Events.OnClockUpdate.Add(AdminRadZone.verbose) ]]
 -----------------------            ---------------------------
-function AdminRadZone.getShrinkRate(rad, rounds)
-    if rounds <= 0 then return 0 end
-    local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
-    if roundDuration <= 0 then return 0 end   
-    return rad / roundDuration
-end
+
 -----------------------            ---------------------------
 
 

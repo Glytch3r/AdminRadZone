@@ -4,7 +4,15 @@ if isClient() then return end
 AdminRadZone = AdminRadZone or {}
 
 LuaEventManager.AddEvent("OnClockUpdate")
-
+-----------------------            ---------------------------
+function AdminRadZone.getShrinkRate(rad, rounds)
+    rad = rad or AdminRadZoneData.rad
+    rounds = rounds or AdminRadZoneData.rounds
+    if rounds <= 0 then return 0 end
+    local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
+    if roundDuration <= 0 then return 0 end   
+    return rad / roundDuration
+end
 -----------------------            ---------------------------
 function AdminRadZone.initServer()
     AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
@@ -61,7 +69,8 @@ function AdminRadZone.OnServerClockUpdate(curSec)
                 AdminRadZone.syncToAllClients()
             end
         elseif AdminRadZoneData.state == "active" then
-            AdminRadZoneData.rad = math.max(0, AdminRadZoneData.rad - 1)
+            local ShrinkRate = AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
+            AdminRadZoneData.rad = math.max(0, AdminRadZoneData.rad - ShrinkRate)
             if AdminRadZoneData.rad <= 0 then 
                 AdminRadZoneData.state = 'inactive'
                 AdminRadZone.syncToAllClients()
