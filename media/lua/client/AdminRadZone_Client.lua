@@ -6,13 +6,15 @@ AdminRadZone = AdminRadZone or {}
 
 -----------------------            ---------------------------
 function AdminRadZone.clear()
-    AdminRadZoneData.x = -1
-    AdminRadZoneData.y = -1
-    AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 4
-    AdminRadZoneData.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
-    AdminRadZoneData.state = "inactive"
-    AdminRadZoneData.duration = 0
-    AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.Cooldown or 60
+    local data
+    data.x = -1
+    data.y = -1
+    data.rad = SandboxVars.AdminRadZone.DefaultRadius or 4
+    data.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
+    data.state = "inactive"
+    data.duration = 0
+    data.cooldown = SandboxVars.AdminRadZone.Cooldown or 60
+    data.run = false
     
     if AdminRadZone.marker then
         AdminRadZone.marker:remove()
@@ -28,13 +30,12 @@ function AdminRadZone.clear()
         AdminRadZone.SickMarker:remove()
         AdminRadZone.SickMarker = nil
     end
-    
-    AdminRadZone.clearZone()
-    print("Client: AdminRadZone cleared")
-end
+    if isClient() then
+        sendServerCommand("AdminRadZone", "Clear", {data = data})
+    end
 
-function AdminRadZone.updateMarker()
-    AdminRadZone.updateClientMarker()
+    AdminRadZone.doTransmit(data)
+
 end
 
 function AdminRadZone.doRun(data)
@@ -46,17 +47,13 @@ function AdminRadZone.doRun(data)
     AdminRadZone.Run() 
 end
 
-function AdminRadZone.doTransmit(data)
-    sendServerCommand("AdminRadZone", "Sync", {data = data or AdminRadZoneData})
-    ModData.transmit("AdminRadZoneData")
 
-end
-
-function AdminRadZone.isAdm(player)
-    return player and (player:getAccessLevel() == "admin" or player:getAccessLevel() == "moderator")
+function AdminRadZone.isAdm(pl)
+    return pl and (pl:getAccessLevel() == "admin" or pl:getAccessLevel() == "moderator")
 end
 
 -----------------------            ---------------------------
+
 function AdminRadZone.initData()
     AdminRadZoneData.pause = AdminRadZoneData.pause or false
     AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
@@ -73,7 +70,6 @@ end
 function AdminRadZone.Fetch()   
     sendClientCommand(getPlayer(), "AdminRadZone", "Fetch", {})
 end
-
 function AdminRadZone.doFetch(data)
     local result = ""
     for k, v in pairs(data) do
@@ -92,74 +88,22 @@ end
 
 -----------------------            ---------------------------
 function AdminRadZone.initClient()
-    AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
-    AdminRadZone.initData()
-    
-    if isClient() then
-        sendServerCommand("AdminRadZone", "RequestSync", {})
+    if ModData.exists('AdminRadZoneData') then
+        ModData.remove('AdminRadZoneData')
     end
-    
-    print("Client: AdminRadZone initialized")
+    AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
 end
-
 Events.OnInitGlobalModData.Add(AdminRadZone.initClient)
 
-function AdminRadZone.onCreatePlayer()
-    if isClient() then
-        sendServerCommand("AdminRadZone", "RequestSync", {})
+function AdminRadZone.onCreatePlayer()    
+    if not AdminRadZoneData then AdminRadZone.initClient() end
+    if AdminRadZone.isShouldShowMarker() then
+        
     end
 end
-
 Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
---[[ 
-    if not AdminRadZone.marker and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1 then
-        local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        if sq then
-            local col = AdminRadZone.getMarkerColor(1)
-            AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Border", "circle_only_highlight", sq,
-                col.r, col.g, col.b, true, AdminRadZoneData.rad)
-        end
-    end
-    if AdminRadZone.marker then
-        AdminRadZone.shiftColor(AdminRadZone.marker)
-        if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
-            AdminRadZone.marker:setSize(AdminRadZoneData.rad)
-        end
-        if round(AdminRadZone.marker:getX()) ~= round(AdminRadZoneData.x) or round(AdminRadZone.marker:getY()) ~= round(AdminRadZoneData.y) then
-            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        end
-    end
- ]]
-function AdminRadZone.updateClientMarker()
-    --getPlayer():setHaloNote(tostring('updated'),150,250,150,900) 
-    if not AdminRadZoneData then return end
-    
-    if AdminRadZoneData.state == "inactive" then
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-    end
-    if AdminRadZoneData.state == "active" or  AdminRadZoneData.state == "cooldown" or  AdminRadZoneData.state == "pause"  then
-        if not AdminRadZone.marker  then
-            local sq = getCell():getOrCreateGridSquare(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-            if sq then
-                local col = AdminRadZone.getMarkerColor(1)
-                AdminRadZone.marker = getWorldMarkers():addGridSquareMarker( "AdminRadZone_Border", "circle_only_highlight", sq, col.r, col.g, col.b, true, AdminRadZoneData.rad)
-            end
-        end
-    end
-    
-    if AdminRadZone.marker then
-        if AdminRadZoneData.rad ~= AdminRadZone.marker:getSize() then
-            AdminRadZone.marker:setSize(AdminRadZoneData.rad)
-        end
-        if round(AdminRadZone.marker:getX()) ~= round(AdminRadZoneData.x) or round(AdminRadZone.marker:getY()) ~= round(AdminRadZoneData.y) then
-            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
-        end
-    end
-end
+
+-----------------------            ---------------------------
 
 function AdminRadZone.isIncomplete()
     return not AdminRadZoneData or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1
@@ -238,13 +182,11 @@ function AdminRadZone.clearZone()
         AdminRadZone.marker = nil
     end
     AdminRadZone.doTransmit(AdminRadZoneData)
-
 end
 
-function AdminRadZone.onModDataReceive(key)
+function AdminRadZone.onModDataReceive(key, data)
     if key == "AdminRadZoneData" then
-        print("Client: ModData updated")
-        AdminRadZone.updateClientMarker()
+        AdminRadZone.save(key, data)
     end
 end
 
@@ -265,50 +207,88 @@ function AdminRadZone.save(key, data)
     end
     
 end
-function AdminRadZone.checkState()
-    if AdminRadZoneData.state == "active" then return true end
-    if AdminRadZoneData.state == "inactive" then return false end
-    return nil
-end
 
-function AdminRadZone.core(module, command, args) 
-    if module == "AdminRadZone" or module == "AdminRadZoneData" then   
-        local pl = getPlayer();   
-        if command == "Sync" and args.data then
-            for key, value in pairs(args.data) do
-                AdminRadZoneData[key] = value
-            end
-            --print("Client: Received sync from server")
-            AdminRadZone.updateClientMarker()
-        elseif command == "Run" and (args.x or args.y or args.rad or args.rounds) then
-            AdminRadZoneData.state = "active" 
-            AdminRadZone.Run(args.x, args.y, args.rad, args.rounds)          
-        elseif command == "Pause" and args.data then
-            AdminRadZoneData.state = "pause" 
-            AdminRadZone.save("AdminRadZoneData", args.data)     
-        elseif command == "Clear" and args.data then
-            AdminRadZoneData.state = "inactive" 
-            AdminRadZone.clearZone()
-            
-        elseif command == "Msg" and args.msg then 
-            print('AdminRadZone Server:\n'..tostring(args.msg))
-        elseif command == "Fetch" and args.data then 
-           AdminRadZone.doFetch(args.data)
+function AdminRadZone.core(module, command, args)
+    if module ~= "AdminRadZone" and module ~= "AdminRadZoneData" then return end
+    local pl = getPlayer()
+    if command == "Sync" and args.data then
+        for key, value in pairs(args.data) do
+            AdminRadZoneData[key] = value
         end
+        AdminRadZone.updateClientMarker()
+    elseif command == "Run" and args.data then
+        for key, value in pairs(args.data) do
+            AdminRadZoneData[key] = value
+        end
+        AdminRadZone.updateClientMarker()
+    elseif command == "Pause" and args.data then
+        for key, value in pairs(args.data) do
+            AdminRadZoneData[key] = value
+        end
+        AdminRadZone.updateClientMarker()
+    elseif command == "Clear" and args.data then
+        for key, value in pairs(args.data) do
+            AdminRadZoneData[key] = value
+        end
+        AdminRadZone.updateClientMarker()
+    elseif command == "Msg" and args.msg then
+        print('AdminRadZone Server:\n' .. tostring(args.msg))
+    elseif command == "Fetch" and args.data then
+        for key, value in pairs(args.data) do
+            AdminRadZoneData[key] = value
+        end
+        AdminRadZone.updateClientMarker()
     end
-end 
+end
 
 Events.OnServerCommand.Add(AdminRadZone.core)
 
-function AdminRadZone.activate(bool)
-    if bool == true then
-        AdminRadZoneData.state = "active"
-        AdminRadZone.Run()
-    else
-        AdminRadZoneData.state = "inactive"
-        AdminRadZone.clearZone()
-    end
+function AdminRadZone.isShouldShowMarker()
+    if AdminRadZoneData.state == nil then return false end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return false end
+    local tab = {
+        ["active"] = true,
+        ["pause"] = true,
+        ["cooldown"] = true,
+    }
+    return tab[AdminRadZoneData.state]
 end
-
 -----------------------            ---------------------------
 
+
+function AdminRadZone.updateClientMarker()
+    local data = AdminRadZoneData
+    if not data or not data.state then return end
+    
+    if AdminRadZone.isShouldShowMarker() then
+        if not AdminRadZone.marker then
+            local sq = getCell():getOrCreateGridSquare(data.x, data.y, 0)
+            if sq then
+                local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
+                if col and data.rad then
+                    AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
+                        "AdminRadZone_Border",
+                        "circle_only_highlight",
+                        sq,
+                        col.r, col.g, col.b,
+                        true,
+                        data.rad
+                    )
+                end
+            end
+        else
+            AdminRadZone.marker:setSize(data.rad)
+            AdminRadZone.marker:setPos(data.x, data.y, 0)
+        end
+    else
+       if AdminRadZone.marker then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
+    end
+
+    if AdminRadZone.marker then
+ 
+    end
+end
+Events.OnPlayerUpdate.Add(AdminRadZone.updateClientMarker)

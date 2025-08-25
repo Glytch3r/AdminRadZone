@@ -9,23 +9,6 @@ AdminRadZone = AdminRadZone or {}
 -----------------------            ---------------------------
 
 
-AdminRadZone.PausedColor   = {r=1.0, g=0.85, b=0.2,  a=0.8} -- yellow
-AdminRadZone.CooldownColor = {r=0.4, g=0.8,  b=1.0,  a=0.8} -- light blue
-AdminRadZone.InactiveColor = {r=0.5, g=0.5,  b=0.5,  a=0.8} -- gray
-AdminRadZone.ActiveColor   = {r=0.2, g=0.85, b=0.2,  a=0.8} -- green
-
-function AdminRadZone.getPanelColor(str)
-    str = str or  AdminRadZoneData.state
-    local tab = {
-        [""] = {r=0.2, g=0, b=0, a=0.8},             -- default/fallback
-        ["pause"] = {r=1.0, g=0.85, b=0.2,  a=0.8},           -- paused
-        ["cooldown"] = {r=0.4, g=0.8,  b=1.0,  a=0.8},         -- cooldown
-        ["inactive"] = {r=0.5, g=0.5,  b=0.5,  a=0.8},         -- ready/inactive
-        ["active"] = {r=0.2, g=0.85, b=0.2,  a=0.8},           -- active
-    }
-    return tab[str] or AdminRadZone.InactiveColor
-end
-
 function AdminRadZone.getMarkerColor(alpha, pick)
     alpha = alpha or 1
     pick = pick or SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.MarkerColor or 3

@@ -1,24 +1,6 @@
 
 --AdminRadZone_Zone.lua
 AdminRadZone = AdminRadZone or {}
---[[ LuaEventManager.AddEvent("OnClockUpdate")
-function AdminRadZone.verbose(curSec)
-    if AdminRadZone.isVerbose then
-        print(curSec)
-    end
-end
-Events.OnClockUpdate.Remove(AdminRadZone.verbose)
-Events.OnClockUpdate.Add(AdminRadZone.verbose) ]]
------------------------            ---------------------------
-
------------------------            ---------------------------
-
-
-
-
-
-
-
 
 -----------------------            ---------------------------
 function AdminRadZone.getRadiusFromSquares(sq1, sq2)
@@ -37,7 +19,9 @@ local ticks = 0
 function AdminRadZone.RadiationMarker()
     ticks = ticks + 1
     local pl = getPlayer()
+
     if ticks % 2 ~= 0 then return end
+
     if AdminRadZoneData.state == "inactive" then
         if AdminRadZone.SickMarker then
             AdminRadZone.SickMarker:remove()
@@ -65,8 +49,7 @@ function AdminRadZone.RadiationMarker()
             end
         else
             AdminRadZone.SickMarker:setPos(pl:getX(), pl:getY(), pl:getZ())
-            AdminRadZone.SickMarker:setSize(ticks/10)
-
+            AdminRadZone.SickMarker:setSize(math.max(0, math.min(1, ticks/10)))
         end
     else
         if AdminRadZone.SickMarker then
@@ -85,15 +68,15 @@ function AdminRadZone.RadiationMarker()
         stats:setSickness(RadDamage)
 
         if stats:getSickness() > 0.2 then
-            if ticks % 3 == 0 and SandboxVars.AdminRadZone.doRadFloorVisual then
+            if ticks % 5 == 0 and SandboxVars.AdminRadZone.doRadFloorVisual then
                 AdminRadZone.doRadSpr()
             end
-            if ticks % 5 == 0 and SandboxVars.AdminRadZone.doNVG then
+            if ticks % 10 == 0 and SandboxVars.AdminRadZone.doNVG then
                 AdminRadZone.doRadNvg()
             end
         end
     end
-    if ticks >= 10 then ticks = 0 end
+    if ticks >= 100 then ticks = 0 end
 
 end
 Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
