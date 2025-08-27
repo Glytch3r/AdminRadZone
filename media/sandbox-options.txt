@@ -80,3 +80,10 @@ option AdminRadZone.ShrinkAlertMessage
 	type = boolean, default = true,
 	page = AdminRadZone, translation = AdminRadZone_ShrinkAlertMessage,
 }
+
+
+option AdminRadZone.MapSymbols
+{
+	type = boolean, default = true,
+	page = AdminRadZone, translation = AdminRadZone_MapSymbols,
+}

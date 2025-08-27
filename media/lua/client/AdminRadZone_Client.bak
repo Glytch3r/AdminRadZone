@@ -87,30 +87,6 @@ function AdminRadZone.clear()
     
     return AdminRadZoneData
 end
-function AdminRadZone.initClient()
-    if ModData.exists('AdminRadZoneData') then
-        ModData.remove('AdminRadZoneData')
-    end
-    AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
-    AdminRadZone.initData()
-end
-
-Events.OnInitGlobalModData.Add(AdminRadZone.initClient)
-
-function AdminRadZone.onCreatePlayer()    
-    if not AdminRadZoneData then 
-        AdminRadZone.initClient() 
-    end
-
-    
-    local player = getPlayer()
-    if AdminRadZone.isAdm(player) then
-        AdminRadZone.requestSync()
-    end
-end
-
-Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
-
 function AdminRadZone.isIncomplete()
     return not AdminRadZoneData or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1
 end

@@ -140,6 +140,9 @@ function AdminRadZone.clientSync(module, command, player, args)
         AdminRadZone.updateData(args.data)
         if AdminRadZoneData.state == 'cooldown' then
             AdminRadZoneData.cooldown = 0
+            if AdminRadZoneData.run == true then
+                AdminRadZoneData.state = 'active'    
+            end
         else
             AdminRadZoneData.run = true    
             AdminRadZoneData.state = 'active'    

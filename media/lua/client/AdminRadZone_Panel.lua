@@ -244,10 +244,13 @@ function AdminRadZonePanel:onApply()
     
     AdminRadZoneData.x = AdminRadZoneData.x or -1
     AdminRadZoneData.y = AdminRadZoneData.y or -1
-    AdminRadZoneData.rad = self.tempRad    or AdminRadZoneData.rad 
+    AdminRadZoneData.rad = self.tempRad   or AdminRadZoneData.rad 
     AdminRadZoneData.rounds = self.tempRounds    or AdminRadZoneData.rounds 
     AdminRadZoneData.duration = 0
     AdminRadZoneData.cooldown = 0
+    
+    AdminRadZoneData.run = AdminRadZoneData.run or AdminRadZoneData.state == "active"
+
     if AdminRadZoneData.rounds <= 0 or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then
         AdminRadZoneData.state = "inactive"
         AdminRadZoneData.rounds = self.tempRounds
@@ -255,7 +258,7 @@ function AdminRadZonePanel:onApply()
     
     --AdminRadZone.doTransmit(AdminRadZoneData)
     ModData.transmit('AdminRadZoneData')
-    self.didChange = false
+    self.didChange = true
 end
 function AdminRadZonePanel.onPausePlay()
     if AdminRadZoneData.state == "pause" then
@@ -288,11 +291,12 @@ function AdminRadZonePanel:render()
 end
 
 AdminRadZone.panelColors = {
-    ["pause"] = {r=1.0, g=0.85, b=0.2, a=0.8},         
-    ["cooldown"] = {r=0.4, g=0.8, b=1.0, a=0.8},   
-    ["inactive"] = {r=0.5, g=0.5, b=0.5, a=0.8},    
-    ["active"] = {r=0.2, g=0.85, b=0.2, a=0.8},        
+    ["pause"] = { r = 0.99, g = 0.49, b = 0.00, a=0.8},      
+    ["cooldown"] = {r = 0.08, g = 0.50, b = 0.70, a=0.8},    
+    ["inactive"] = {r = 0.12, g = 0.12, b = 0.12, a=0.8},    
+    ["active"] = { r = 0.46, g = 0.84, b = 0.49, a=0.8},        
 }
+
 -----------------------            ---------------------------
 function AdminRadZonePanel.ClosePanel()
     if AdminRadZonePanel.instance then
@@ -337,6 +341,7 @@ function AdminRadZonePanel:update()
     local liveData = AdminRadZoneData
     local tempData = AdminRadZoneData
     local data = AdminRadZoneData
+    AdminRadZoneData.rad = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
     -----------------------            ---------------------------
     self.statusText = state
     self.statusColor = AdminRadZone.panelColors[state] or AdminRadZone.panelColors["inactive"]
@@ -370,21 +375,20 @@ function AdminRadZonePanel:update()
     -----------------------            ---------------------------
     if data.state ~= "inactive" then
         self.currentRoundLabel.name = "Rounds: " .. tostring(AdminRadZoneData.rounds)        
-        self.currentRadiusLabel.name = "Radius: " .. tostring(round(AdminRadZoneData.rad,3))
+        self.currentRadiusLabel.name = "Radius: " .. tostring(round(tonumber(AdminRadZoneData.rad),3))
     else
         self.currentRoundLabel.name = "Rounds: " .. tostring(self.tempRounds or AdminRadZoneData.rounds )
         self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad or round(AdminRadZoneData.rad,2))
     end
-    
     self.timerLabel.name = "Timer: " .. timerText
     self.borderColor = self.statusColor
     self.titleLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
     self.pausePlayBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
     -----------------------            ---------------------------
-    if state == "pause" then
+    if data.state == "pause" then
         self.pausePlayBtn:setTitle("UNPAUSE")
         self.pausePlayBtn.enable = true
-    elseif state == "active" or state == "cooldown" then
+    elseif data.state == "active" or state == "cooldown" then
         self.pausePlayBtn:setTitle("PAUSE")
         self.pausePlayBtn.enable = true
     else            
@@ -393,18 +397,29 @@ function AdminRadZonePanel:update()
     end
     
     -----------------------            ---------------------------
-    self.runBtn.enable = AdminRadZone.isCanRun() and not running
+    self.runBtn.enable = false
     
-    if state == "cooldown" then
+    if data.state == "cooldown" then
         self.runBtn:setTitle("Continue")
         self.runBtn.enable = true
+
     else
         self.runBtn:setTitle("Run")
-        self.runBtn.enable = not AdminRadZone.isIncomplete() and AdminRadZone.isCanRun(  AdminRadZoneData.x , AdminRadZoneData.y, self.tempRad or AdminRadZoneData.rad)  
+        self.runBtn.enable = true
     end
    
-    self.applyBtn.enable = self.didChange and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1
-    self.teleportBtn.enable = not (AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1)
+    
+    if  not AdminRadZoneData.x == -1 and not AdminRadZoneData.y == -1 then
+        self.applyBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
+        self.applyBtn.enable = true
+        
+        self.teleportBtn.enable = true
+        self.applyBtn.enable = self.didChange 
+        if not data.state ~= "active" then
+            self.runBtn.enable = true
+        end
+    end
+
    
     -----------------------            ---------------------------
 	self.statusIcon.backgroundColor.r = self.borderColor.r;
