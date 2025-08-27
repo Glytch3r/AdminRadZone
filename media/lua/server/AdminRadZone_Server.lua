@@ -187,9 +187,10 @@ function AdminRadZone.OnServerClockUpdate(curSec)
         AdminRadZoneData.cooldown = math.max(0, AdminRadZoneData.cooldown - 1)
         if AdminRadZoneData.cooldown <= 0 then
             AdminRadZoneData.state = "active"
+                pl:getEmitter():playSound("AdminRadZone_Warning")
 
 
-            sendServerCommand(player, "AdminRadZone", "Msg", {msg = "AdminRadZone: SERVER UPDATED"})
+            sendServerCommand("AdminRadZone", "Warning", {})
 
 
         end
@@ -211,6 +212,7 @@ function AdminRadZone.OnServerClockUpdate(curSec)
             AdminRadZoneData.duration = AdminRadZoneData.duration + 1
             if AdminRadZoneData.duration % (SandboxVars.AdminRadZone.RoundDuration or 60) == 0 then
                 AdminRadZoneData.duration = 0
+
                 AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.Cooldown or 60
                 AdminRadZoneData.state = "cooldown"
                 AdminRadZoneData.rounds = math.max(0, AdminRadZoneData.rounds - 1)

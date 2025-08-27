@@ -1,5 +1,4 @@
 
-
 function AdminRadZone.updateClientSymbol(pl)
     local data = AdminRadZoneData
     if not data or not data.state then return end
@@ -30,14 +29,14 @@ function AdminRadZone.updateClientSymbol(pl)
         end
         AdminRadZone.markerChoice = AdminRadZone.markerChoice or AdminRadZone.swapImg[AdminRadZone.markerChoice] 
         AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-            AdminRadZone.shouldPick, 
-            AdminRadZone.markerChoice,
-            sq,
-            AdminRadZone.markCol.r,
-            AdminRadZone.markCol.g,
-            AdminRadZone.markCol.b,
-            true,
-            data.rad
+        AdminRadZone.shouldPick, 
+        AdminRadZone.markerChoice,
+        sq,
+        AdminRadZone.markCol.r,
+        AdminRadZone.markCol.g,
+        AdminRadZone.markCol.b,
+        true,
+        data.rad
         )
 
       --  AdminRadZone.markerChoice = AdminRadZone.shouldPick
@@ -75,7 +74,6 @@ function AdminRadZone.updateClientSymbol(pl)
     end
 end
 Events.OnPlayerUpdate.Add(AdminRadZone.updateClientMarker)
-
 
 
 
