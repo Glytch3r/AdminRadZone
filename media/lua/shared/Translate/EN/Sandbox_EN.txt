@@ -22,7 +22,7 @@ Sandbox_EN = {
 	Sandbox_AdminRadZone_MarkerColor_option11 = "Disabled",
 
 
-	Sandbox_AdminRadZone_RadColor = "Radiation Zone Color",
+    Sandbox_AdminRadZone_RadColor = "Out of bound Indicator Color",
 	Sandbox_AdminRadZone_RadColor_option1 = "Red"
 	Sandbox_AdminRadZone_RadColor_option2 = "Orange "
 	Sandbox_AdminRadZone_RadColor_option3 = "Yellow"

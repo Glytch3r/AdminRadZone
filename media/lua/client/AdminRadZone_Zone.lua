@@ -78,7 +78,6 @@ function AdminRadZone.radiate(marker, val)
 end
 
 function AdminRadZone.RadiationMarker(pl)
-
     if not AdminRadZoneData or AdminRadZoneData.state == "inactive" then  
         if AdminRadZone.SickMarker then
             AdminRadZone.SickMarker:remove()
@@ -112,7 +111,7 @@ function AdminRadZone.RadiationMarker(pl)
             end
         
             AdminRadZone.SickMarker:setPos(pl:getX(), pl:getY(), pl:getZ())           
-            AdminRadZone.radiate(AdminRadZone.SickMarker, ticks)
+            AdminRadZone.radiate(AdminRadZone.SickMarker, ticks/100)
             if ticks % 6000 == 0 then
                 ticks = 0
                 AdminRadZone.RadiationDamage(pl)
@@ -124,8 +123,7 @@ function AdminRadZone.RadiationMarker(pl)
             AdminRadZone.SickMarker = nil
         end
         if AdminRadZone.wasOut then
-            bodyDamage:setFoodSicknessLevel(math.max(0, bodyDamage:getFoodSicknessLevel() - RadDamage))
-            pl:setHealth(math.min(pl:getMaxHealth(), pl:getHealth() + RadDamage))
+            pl:getBodyDamage():AddGeneralHealth(RadDamage)
         end
     end
 
@@ -178,9 +176,14 @@ end
 
  function AdminRadZone.isOutOfBound(pl)
     pl = pl or getPlayer()
+
     if not pl then return false end
 
     if not AdminRadZoneData then return false end
+    if not AdminRadZoneData.state then return false end
+    
+    if AdminRadZoneData.state == 'inactive' then return false end
+
     if  AdminRadZoneData.x == -1 or  AdminRadZoneData.y == -1 then return false end
     
 

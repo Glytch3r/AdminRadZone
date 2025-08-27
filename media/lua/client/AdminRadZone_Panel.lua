@@ -352,7 +352,10 @@ function AdminRadZonePanel:update()
     -----------------------            ---------------------------
     local timerText = "--"
     if data.state == "active" then
-        timerText = "Shrink: " .. tostring(data.duration or 0) .. "s"
+        local dur = tostring(SandboxVars.AdminRadZone.RoundDuration - data.duration) ..' / '.. tostring(SandboxVars.AdminRadZone.RoundDuration)
+        timerText = "Shrink: " .. tostring(dur) 
+
+        --timerText = "Shrink: " .. tostring(data.duration) .. "s"
     elseif data.state == "cooldown" then
         timerText = "Cool: " .. tostring(data.cooldown or 0) .. "s"
     end
@@ -367,10 +370,10 @@ function AdminRadZonePanel:update()
     -----------------------            ---------------------------
     if data.state ~= "inactive" then
         self.currentRoundLabel.name = "Rounds: " .. tostring(AdminRadZoneData.rounds)        
-        self.currentRadiusLabel.name = "Radius: " .. tostring(AdminRadZoneData.rad)
+        self.currentRadiusLabel.name = "Radius: " .. tostring(round(AdminRadZoneData.rad,3))
     else
         self.currentRoundLabel.name = "Rounds: " .. tostring(self.tempRounds or AdminRadZoneData.rounds )
-        self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad or AdminRadZoneData.rad)
+        self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad or round(AdminRadZoneData.rad,2))
     end
     
     self.timerLabel.name = "Timer: " .. timerText
