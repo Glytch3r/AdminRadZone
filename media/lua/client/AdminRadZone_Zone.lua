@@ -1,43 +1,4 @@
 
-function AdminRadZone.initClient()
-    if ModData.exists('AdminRadZoneData') then
-        ModData.remove('AdminRadZoneData')
-    end
-    AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
-    AdminRadZone.initData()
-end
-
-Events.OnInitGlobalModData.Add(AdminRadZone.initClient)
-
-function AdminRadZone.onCreatePlayer()    
-    if not AdminRadZoneData then 
-        AdminRadZone.initClient() 
-    end
-
-        
-        local player = getPlayer()-- When creating
-    AdminRadZone.setMarker(getWorldMarkers():addGridSquareMarker(
-        "AdminRadZone_Highlight", "", sq,
-        col.r, col.g, col.b, true, 0.4
-    ))
-
-    local marker = AdminRadZone.getMarker()
-    if marker then
-        marker:setPos(pl:getX(), pl:getY(), pl:getZ())
-        AdminRadZone.radiate(marker, ticks)
-    end
-
-    AdminRadZone.removeMarker()
-
-    if AdminRadZone.isAdm(player) then
-        AdminRadZone.requestSync()
-    end
-end
-
-Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
-
-
-
 
 function AdminRadZone.updateClientSymbol(pl)
     local data = AdminRadZoneData
@@ -78,6 +39,7 @@ function AdminRadZone.updateClientSymbol(pl)
             true,
             data.rad
         )
+
       --  AdminRadZone.markerChoice = AdminRadZone.shouldPick
     end
 

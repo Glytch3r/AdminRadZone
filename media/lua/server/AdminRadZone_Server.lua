@@ -73,8 +73,12 @@ end
 function AdminRadZone.clearServer()
     AdminRadZoneData.x = -1
     AdminRadZoneData.y = -1
-    AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 4
     AdminRadZoneData.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
+    AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 4
+
+    AdminRadZoneData.roundsTotal =  tostring(AdminRadZoneData.rounds)
+    AdminRadZoneData.radTotal =  tostring(AdminRadZoneData.rad)
+
     AdminRadZoneData.run = false
     AdminRadZoneData.state = "inactive"
     AdminRadZoneData.duration = 0

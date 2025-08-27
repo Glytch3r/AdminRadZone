@@ -19,10 +19,15 @@ function AdminRadZone.requestSync()
 end
 
 function AdminRadZone.updateServer(data)
+    data.roundsTotal = tostring(data.rounds)
+    data.radTotal = tostring(data.rad)
     sendClientCommand("AdminRadZone", "Update", {data = data})
 end
 
 function AdminRadZone.startZone(data)
+    data.roundsTotal = tostring(data.rounds)
+    data.radTotal = tostring(data.rad)
+    data.run = true
     sendClientCommand("AdminRadZone", "Run", {data = data})
 end
 
@@ -43,7 +48,7 @@ function AdminRadZone.doFetch(data)
     result = result .. "Total Time: " .. AdminRadZone.formatTime(data.totalTime) .. "\n"
     result = result .. "Remaining Time: " .. AdminRadZone.formatTime(data.remainingTime) .. "\n"
     result = result .. "Run: " .. tostring(data.run) .. "\n"
-    
+
     Clipboard.setClipboard(result)
     print(result)
     
@@ -64,11 +69,18 @@ function AdminRadZone.clear()
     AdminRadZoneData.x = -1
     AdminRadZoneData.y = -1
     AdminRadZoneData.run =  false
+    AdminRadZoneData.roundsTotal =  tostring(AdminRadZoneData.rounds)
+    AdminRadZoneData.radTotal =  tostring(AdminRadZoneData.rad)
+
+
     AdminRadZoneData.totalTime = AdminRadZone.getTotalTime() or 0
     AdminRadZoneData.remainingTime = AdminRadZoneData.remainingTime or 0
     sendClientCommand("AdminRadZone", "Clear", {data = AdminRadZoneData})
     return AdminRadZoneData
 end
+
+
+
 
 function AdminRadZone.initClient()
     if ModData.exists('AdminRadZoneData') then
@@ -77,14 +89,17 @@ function AdminRadZone.initClient()
 
     if not AdminRadZoneData then 
         AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
-        
     end
     
     AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
     AdminRadZoneData.duration = AdminRadZoneData.duration or 0
     AdminRadZoneData.state = AdminRadZoneData.state or "inactive"
     AdminRadZoneData.rounds = AdminRadZoneData.rounds or SandboxVars.AdminRadZone.DefaultRounds or 5
-    AdminRadZoneData.rad = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4    
+    AdminRadZoneData.rad = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4   
+
+    AdminRadZoneData.roundsTotal =  AdminRadZoneData.roundsTotal or tostring(AdminRadZoneData.rounds)
+    AdminRadZoneData.radTotal = AdminRadZoneData.radTotal or  tostring(AdminRadZoneData.rad)
+
     AdminRadZoneData.x = AdminRadZoneData.x or -1
     AdminRadZoneData.y = AdminRadZoneData.y or -1
     AdminRadZoneData.run = AdminRadZoneData.run or false
@@ -102,18 +117,6 @@ function AdminRadZone.onModDataReceive(key, data)
 end
 Events.OnReceiveGlobalModData.Add(AdminRadZone.onModDataReceive)
 
-function AdminRadZone.onCreatePlayer()    
-    if not AdminRadZoneData then 
-        AdminRadZone.initClient() 
-    end
-    
-   --[[  local player = getPlayer()
-    if AdminRadZone.isAdm(player) then
-        AdminRadZone.requestSync()
-    end ]]
-end
-
-Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
 
 function AdminRadZone.isIncomplete()
     return not AdminRadZoneData or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1

@@ -54,7 +54,7 @@ Sandbox_EN = {
     Sandbox_AdminRadZone_ShrinkAlertAudio = "Radiation Warning Alert Sound Effects",
     Sandbox_AdminRadZone_ShrinkAlertMessage = "Radiation Warning Alert Message",
 
-
+    Sandbox_AdminRadZone_MapSymbols = "Map Symbols",
 
 
 
