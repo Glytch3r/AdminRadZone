@@ -244,16 +244,13 @@ function AdminRadZone.doRadSpr()
 
     local obj = IsoObject.new(getCell(), sq, sprName, false, {})
     sq:AddTileObject(obj)
-
     local col = AdminRadZone.getRadColor(5)
-    obj:setHighlightColor(col)
-    obj:setHighlighted(true, false)
-    obj:setOutlineHighlightCol(col)
-    obj:setOutlineThickness(1)
-    obj:setOutlineHighlight(true)
-    obj:setBlink(true)
-    obj:setOutlineHlBlink(true)
 
+    if col then
+        obj:setHighlightColor(col.r, col.g,col.b, 1)
+        obj:setHighlighted(true, true)
+        obj:setBlink(true)
+    end
     AdminRadZone.halt(0.5, function() obj:setSprite(sprName2) end)
     AdminRadZone.halt(1, function() obj:setSprite(sprName3) end)
     AdminRadZone.halt(1.5, function() AdminRadZone.doSledge(obj) end)
