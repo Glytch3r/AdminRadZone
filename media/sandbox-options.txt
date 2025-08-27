@@ -45,6 +45,11 @@ option AdminRadZone.RadColor
     translation = AdminRadZone_RadColor,
     valueTranslation = AdminRadZone_RadColor,
 }
+option AdminRadZone.DeactivateRadZero
+{
+	type = boolean, default = false,
+	page = AdminRadZone, translation = AdminRadZone_DeactivateRadZero,
+}
 
 option AdminRadZone.doRadFloorVisual
 {

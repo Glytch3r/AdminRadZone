@@ -30,6 +30,12 @@ Sandbox_EN = {
 	Sandbox_AdminRadZone_RadColor_option5 = "Blue"
 	Sandbox_AdminRadZone_RadColor_option6 = "Purple"
 
+
+
+    Sandbox_AdminRadZone_DeactivateRadZero = "Deactivate Zone When Radius 0",    
+    Sandbox_AdminRadZone_DeactivateRadZero_tooltip = "False will only pause after radius hits 0",    
+
+
     Sandbox_AdminRadZone_DefaultRadius = "Default Radius",    
     Sandbox_AdminRadZone_DefaultRounds = "Default Rounds",
 

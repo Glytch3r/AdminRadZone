@@ -191,10 +191,15 @@ function AdminRadZone.OnServerClockUpdate(curSec)
     end
     if AdminRadZoneData.state == "active" then
         local shrinkRate = AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
-        AdminRadZoneData.rad = math.max(1, AdminRadZoneData.rad - shrinkRate)
+        AdminRadZoneData.rad = math.max(0, AdminRadZoneData.rad - shrinkRate)
         
-        if AdminRadZoneData.rad <= 1 then 
-            AdminRadZoneData.state = "pause"
+        if AdminRadZoneData.rad <= 0 then 
+            if SandboxVars.AdminRadZone.DeactivateRadZero then
+                AdminRadZoneData.run = false
+                AdminRadZoneData.state = "inactive"        
+            else
+                AdminRadZoneData.state = "pause"
+            end
         else
             AdminRadZoneData.duration = AdminRadZoneData.duration + 1
             if AdminRadZoneData.duration % (SandboxVars.AdminRadZone.RoundDuration or 60) == 0 then
