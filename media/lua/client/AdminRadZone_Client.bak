@@ -15,20 +15,21 @@ end
 
 ----------------------- ---------------------------
 function AdminRadZone.requestSync()
-    sendClientCommand("AdminRadZone", "RequestSync", {})
+    sendServerCommand("AdminRadZone", "RequestSync", {})
 end
 
 function AdminRadZone.updateServer(data)
-    sendClientCommand("AdminRadZone", "Update", {data = data})
+    sendServerCommand("AdminRadZone", "Update", {data = data})
 end
 
-function AdminRadZone.startZone(data)
-    sendClientCommand("AdminRadZone", "Run", {data = data})
+
+function AdminRadZone.resume()
+    sendServerCommand("AdminRadZone", "Resume", {})
 end
 
 -----------------------            ---------------------------
 function AdminRadZone.fetch()   
-    sendClientCommand("AdminRadZone", "Fetch", {})
+    sendServerCommand("AdminRadZone", "Fetch", {})
 end
 
 function AdminRadZone.doFetch(data)
@@ -53,32 +54,8 @@ function AdminRadZone.doFetch(data)
     end
 end
 -----------------------            ---------------------------
-
-function AdminRadZone.clear()
-    if not AdminRadZoneData then return nil end    
-    AdminRadZoneData.cooldown = 0
-    AdminRadZoneData.duration = 0
-    AdminRadZoneData.state = "inactive"
-    AdminRadZoneData.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
-    AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 4    
-    AdminRadZoneData.x = -1
-    AdminRadZoneData.y = -1
-    AdminRadZoneData.run =  false
-    AdminRadZoneData.totalTime = AdminRadZone.getTotalTime() or 0
-    AdminRadZoneData.remainingTime = AdminRadZoneData.remainingTime or 0
-    sendClientCommand("AdminRadZone", "Clear", {data = AdminRadZoneData})
-    return AdminRadZoneData
-end
-
-function AdminRadZone.initClient()
-    if ModData.exists('AdminRadZoneData') then
-        ModData.remove('AdminRadZoneData')
-    end
-
-    if not AdminRadZoneData then 
-        AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
-        
-    end
+function AdminRadZone.initData()
+    if not AdminRadZoneData then return nil end
     
     AdminRadZoneData.cooldown = AdminRadZoneData.cooldown or SandboxVars.AdminRadZone.Cooldown or 60
     AdminRadZoneData.duration = AdminRadZoneData.duration or 0
@@ -93,24 +70,43 @@ function AdminRadZone.initClient()
     
     return AdminRadZoneData
 end
-Events.OnInitGlobalModData.Add(AdminRadZone.initClient)
 
-function AdminRadZone.onModDataReceive(key, data)
-    if key == "AdminRadZoneData" or  key == "AdminRadZone"  then
-        AdminRadZone.save(key, data)    
-    end
+function AdminRadZone.clear()
+    if not AdminRadZoneData then return nil end
+    
+    AdminRadZoneData.cooldown = 0
+    AdminRadZoneData.duration = 0
+    AdminRadZoneData.state = "inactive"
+    AdminRadZoneData.rounds = SandboxVars.AdminRadZone.DefaultRounds or 5
+    AdminRadZoneData.rad = SandboxVars.AdminRadZone.DefaultRadius or 4    
+    AdminRadZoneData.x = -1
+    AdminRadZoneData.y = -1
+    AdminRadZoneData.run =  false
+    AdminRadZoneData.totalTime = AdminRadZone.getTotalTime() or 0
+    AdminRadZoneData.remainingTime = AdminRadZoneData.remainingTime or 0
+    
+    return AdminRadZoneData
 end
-Events.OnReceiveGlobalModData.Add(AdminRadZone.onModDataReceive)
+function AdminRadZone.initClient()
+    if ModData.exists('AdminRadZoneData') then
+        ModData.remove('AdminRadZoneData')
+    end
+    AdminRadZoneData = ModData.getOrCreate("AdminRadZoneData")
+    AdminRadZone.initData()
+end
+
+Events.OnInitGlobalModData.Add(AdminRadZone.initClient)
 
 function AdminRadZone.onCreatePlayer()    
     if not AdminRadZoneData then 
         AdminRadZone.initClient() 
     end
+
     
-   --[[  local player = getPlayer()
+    local player = getPlayer()
     if AdminRadZone.isAdm(player) then
         AdminRadZone.requestSync()
-    end ]]
+    end
 end
 
 Events.OnCreatePlayer.Add(AdminRadZone.onCreatePlayer)
@@ -166,7 +162,12 @@ end
 
 
 -----------------------            ---------------------------
-
+function AdminRadZone.onModDataReceive(key, data)
+    if key == "AdminRadZoneData" or  key == "AdminRadZone"  then
+        AdminRadZone.save(key, data)    
+    end
+end
+Events.OnReceiveGlobalModData.Add(AdminRadZone.onModDataReceive)
 
 function AdminRadZone.save(key, data)
     if (key == "AdminRadZoneData" or key == "AdminRadZone") and data then      
@@ -183,7 +184,6 @@ function AdminRadZone.save(key, data)
         return AdminRadZoneData
     end
 end
-
 -----------------------            ---------------------------
 function AdminRadZone.core(module, command, args)
     if module ~= "AdminRadZone" then return end
@@ -198,29 +198,10 @@ function AdminRadZone.core(module, command, args)
         if pl and AdminRadZone.isAdm(pl) then
             pl:Say(args.msg)
         end
-    elseif command == "Warning"  then
-        local pl = getPlayer()
-        if SandboxVars.AdminRadZone.ShrinkAlertAudio then
-            sfx = pl:playSound("AdminRadZone_Warning");            
-        end
-        AdminRadZone.halt(7.5, function()
-            if SandboxVars.AdminRadZone.ShrinkAlertMessage then
-                pl:startMuzzleFlash()
-                local x,y,z = pl:getX(), pl:getY(), pl:getZ()
-                local lamp = pl:getCell():addLamppost(IsoLightSource.new(pl:getX(), pl:getY(), pl:getZ(), 0, 255, 0, 255))
-                AdminRadZone.halt(3, function()
-                    pl:getCell():removeLamppost(x,y,z)
-                end)
-                ISChat.instance.servermsgTimer = 5000
-                ISChat.instance.servermsg = tostring("Radiation Warning")
-            end
-       
-        end)
     elseif command == "Fetch" and args.data then
         AdminRadZone.doFetch(args.data)
     end
 end
-
 
 Events.OnServerCommand.Add(AdminRadZone.core)
 
@@ -299,7 +280,7 @@ function AdminRadZone.updateClientMarker(pl)
     if not data.rad   then return end
     local sq = getCell():getOrCreateGridSquare(data.x, data.y, 0)
     if not sq then return end
-    
+  
     AdminRadZone.markCol = AdminRadZone.markCol or AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
     AdminRadZone.shouldPick = AdminRadZone.shouldPick or "AdminRadZone_Img1"
 

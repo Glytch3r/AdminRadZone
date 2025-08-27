@@ -16,11 +16,13 @@ function AdminRadZone.context(player, context, worldobjects, test)
 	if not pl then return end 
 	if not AdminRadZone.isAdm(pl) then return end
 	
-	
+	if getActivatedMods():contains("AdminFence") and not getCore():getDebug() then
+		return
+    end
 	local x, y = round(pl:getX()), round(pl:getY())
 
-	if  getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
-		if not x or not y then return end
+	if not x or not y then return end
+	if getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
  
 
         local tip = ISWorldObjectContextMenu.addToolTip()
@@ -43,6 +45,5 @@ function AdminRadZone.context(player, context, worldobjects, test)
 
 	end
 end
-Events.OnFillWorldObjectContextMenu.Remove(AdminRadZone.context)
 Events.OnFillWorldObjectContextMenu.Add(AdminRadZone.context)
 

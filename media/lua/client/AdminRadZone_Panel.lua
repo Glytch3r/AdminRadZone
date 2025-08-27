@@ -1,9 +1,6 @@
--- client/AdminRadZone_Panel.lua
 require "ISUI/ISPanel"
-
 AdminRadZone = AdminRadZone or {}
 AdminRadZonePanel = ISPanel:derive("AdminRadZonePanel")
-
 function AdminRadZonePanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -12,24 +9,39 @@ function AdminRadZonePanel:new(x, y, width, height)
     o.moveWithMouse = true
     return o
 end
-
 function AdminRadZone.doTransmit(data)
-    sendServerCommand("AdminRadZone", "Sync", {data = data or AdminRadZoneAdminData})
-    --ModData.transmit("AdminRadZoneAdminData")
+    sendClientCommand("AdminRadZone", "Sync", {data = data or AdminRadZoneData})
+end
+function AdminRadZone.isCanRun(x,y,rad)  
+    x = x or AdminRadZoneData.x
+    y = y or AdminRadZoneData.y
+    rad = rad or AdminRadZoneData.rad
+    return x ~= -1 and y ~= -1 and AdminRadZoneData.state == "inactive" 
 end
 
+function AdminRadZonePanel:getTempTotalTime()
+    if not AdminRadZoneData then return 0 end
+    local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
+    local cooldown = SandboxVars.AdminRadZone.Cooldown or 60
+    local rounds = AdminRadZoneData.rounds or 0
+    
+
+    local activeTime = self.tempRounds * roundDuration
+    local cooldownTime = math.max(0, self.tempRounds - 1) * cooldown
+
+    return activeTime + cooldownTime
+end
 
 function AdminRadZonePanel:initialise()
     ISPanel.initialise(self)
-
     local col = AdminRadZone.getMarkerColor(1)
-
-    if not AdminRadZoneAdminData then
-        AdminRadZoneAdminData = ModData.getOrCreate("AdminRadZoneData")
-        AdminRadZone.initData()
+    if not AdminRadZoneData then
+        AdminRadZone.initClient()
     end
-    
-    local isActive = AdminRadZoneAdminData.state == "active"
+    self.didChange = AdminRadZoneData.x  and AdminRadZoneData.y and AdminRadZoneData.x ~= -1  and AdminRadZoneData.y ~= -1
+    local running = AdminRadZone.isShouldShowMarker()
+    local data = AdminRadZoneData
+    local isActive = data.state == "active"
     
     local margin = 15
     local spacing = 20
@@ -50,60 +62,79 @@ function AdminRadZonePanel:initialise()
     
     self.roundsLabel = ISLabel:new(margin, y, labelHeight, "Rounds:", 1, 1, 1, 1, UIFont.Medium, true)
     self:addChild(self.roundsLabel)
-    
-    local cRound = SandboxVars.AdminRadZone.DefaultRounds or 5
-    if isActive then
-        cRound = AdminRadZoneAdminData.rounds
-    end
 
-    self.roundsEntry = ISTextEntryBox:new(tostring(cRound), margin + 60, y - 2, entryWidth, 18)
+
+    self.tempRounds = AdminRadZoneData.rounds or SandboxVars.AdminRadZone.DefaultRounds  or 5
+
+
+    self.roundsEntry = ISTextEntryBox:new(tostring(self.tempRounds), margin + 60, y - 2, entryWidth, 18)
     self.roundsEntry:initialise()
     self.roundsEntry:instantiate()
 	self.roundsEntry:setOnlyNumbers(true);
     self.roundsEntry.onTextChange = function() self:onRoundsChange() end
     self:addChild(self.roundsEntry)
     
+
     self.currentRoundLabel = ISLabel:new(margin + 140, y, labelHeight, "Round:", 0.8, 0.2, 0.2, 1, UIFont.Small, true)
     self:addChild(self.currentRoundLabel)
     y = y + spacing
     
     self.radiusLabel = ISLabel:new(margin, y, labelHeight, "Radius:", 1, 1, 1, 1, UIFont.Medium, true)
     self:addChild(self.radiusLabel)
-
-    local cRad = SandboxVars.AdminRadZone.DefaultRadius or 4
-    if isActive then
-        cRad = AdminRadZoneAdminData.rad
-    end
-
-    self.radSlider = ISSliderPanel:new(margin + 65, y , 65 , 10, self, function(_, v)
-        self.tempRad = v
-        if AdminRadZone.tempMarker then
+    -----------------------            ---------------------------
+--[[ 
+    self.tempRad = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
+    self.radSlider = ISSliderPanel:new(margin + 65, y+2, 65, 10, self, function(_, value)
+        self.tempRad = value  -- Set tempRad first
+        
+        if AdminRadZone.tempMarker and data.state == "inactive" then
             AdminRadZone.tempMarker:setSize(self.tempRad)
         end
+        if AdminRadZone.marker then
+            AdminRadZoneData.rad = self.tempRad
+            AdminRadZone.marker:setSize(self.tempRad)
+            ModData.transmit('AdminRadZoneData')
+        end
+        
         self.didChange = true
-        self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad)
+        self.currentRadiusLabel.name = "Radius: " .. tostring(math.floor(value))
     end)
+ ]]
+    -----------------------            ---------------------------
+    self.radSlider = ISSliderPanel:new(margin + 65, y+2, 65, 10, self, function(_, value)
+        self.tempRad = value
+        self.didChange = AdminRadZone.isCanRun(x,y,self.tempRad) 
 
-    self.radSlider:initialise()
-    self.radSlider:setValues(-1, 794, 1, 2.5, true) 
-    self.radSlider:setCurrentValue(cRad, true)
-
-    
-
-    
+        local data = AdminRadZoneData
+        if data then
+            if AdminRadZone.marker then
+                AdminRadZoneData.rad = value
+                --AdminRadZone.marker:setSize(self.tempRad)
+                ModData.transmit('AdminRadZoneData')
+            end
+        end
+        --self.currentRadiusLabel.name = "Radius: " .. tostring(math.floor(value))
+    end)
     self:addChild(self.radSlider)
 
-    self.currentRadiusLabel = ISLabel:new(margin + 140, y, labelHeight, "Radius: " .. tostring(cRad), 0.8, 0.2, 0.2, 1, UIFont.Small, true)
+    self.tempRad = AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
+
+    self.radSlider.currentValue = self.tempRad
+    self.radSlider:setValues(1, 7940, 1, 5)
+
+    self.radSlider:setCurrentValue(self.tempRad)
+
+
+
+    self.currentRadiusLabel = ISLabel:new(margin + 140, y, labelHeight, "Radius: " .. tostring(self.tempRad), 0.8, 0.2, 0.2, 1, UIFont.Small, true)
     self:addChild(self.currentRadiusLabel)
     y = y + spacing + 10
-
     
     self.totalTimeLabel = ISLabel:new(margin, y, labelHeight, "Total Time:", 1, 1, 1, 1, UIFont.Medium, true)
     self:addChild(self.totalTimeLabel)
     y = y + spacing 
     self.timerLabel = ISLabel:new(margin + 140, y, labelHeight, "Timer: --", 0.7, 0.7, 0.7, 1, UIFont.Small, true)
     self:addChild(self.timerLabel)
-
     self.totalTimeValueLabel = ISLabel:new(margin, y, labelHeight, "0s", 0.2, 0.8, 1.0, 1, UIFont.Medium, true)
     self:addChild(self.totalTimeValueLabel)
     y = y + spacing +5
@@ -114,7 +145,6 @@ function AdminRadZonePanel:initialise()
     self.statusValueLabel = ISLabel:new(margin + 60, y, labelHeight, "Inactive", 0.5, 0.5, 0.5, 1, UIFont.Medium, true)
     self:addChild(self.statusValueLabel)
     
-
     y = y + spacing +10
     
     self.coordLabel = ISLabel:new(margin, y, labelHeight, "Coordinates:", 1, 1, 1, 1, UIFont.Medium, true)
@@ -132,7 +162,21 @@ function AdminRadZonePanel:initialise()
     self:addChild(self.markerCoordLabel)
     y = y + buttonHeight + 10
     
-    self.selectSquareBtn = ISButton:new(margin, y, buttonWidth + 20, buttonHeight, "Select Square", self, function() self:onXY() end)
+    self.selectSquareBtn = ISButton:new(margin, y, buttonWidth + 20, buttonHeight, "Select Square", self, function()   
+        local pl = getPlayer()
+        if not pl then return end 
+        
+        AdminRadZoneData.x = round(pl:getX())
+        AdminRadZoneData.y = round(pl:getY())
+        
+        if AdminRadZone.marker then
+            AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
+        end
+        self.didChange = true
+        self.markerCoordLabel.name = "Zone:\n" .. tostring(AdminRadZoneData.x) .. "  x  " .. tostring(AdminRadZoneData.y)    
+        ModData.transmit('AdminRadZoneData')
+ 
+    end)
     self.selectSquareBtn.borderColor = {r = 0.41, g = 0.80, b = 1.0, a = 1}
     self.selectSquareBtn:initialise()
     self.selectSquareBtn:instantiate()
@@ -144,7 +188,7 @@ function AdminRadZonePanel:initialise()
     
     local buttonY = y
     
-    self.pausePlayBtn = ISButton:new(margin, buttonY, buttonWidth, buttonHeight, "PAUSE", self, AdminRadZonePanel.onPausePlay)
+    self.pausePlayBtn = ISButton:new(margin, buttonY, buttonWidth, buttonHeight, "PAUSE", self, function() self:onPausePlay()  end)
     self.pausePlayBtn:initialise()
     self.pausePlayBtn:instantiate()
     self:addChild(self.pausePlayBtn)
@@ -160,7 +204,7 @@ function AdminRadZonePanel:initialise()
     self.runBtn:instantiate()
     self:addChild(self.runBtn)
     
-    self.clearBtn = ISButton:new(margin, y, buttonWidth, buttonHeight, "CLEAR", self, AdminRadZonePanel.onClear)
+    self.clearBtn = ISButton:new(margin, y, buttonWidth, buttonHeight, "CLEAR", self, AdminRadZone.clear)
     self.clearBtn.borderColor = {r = 1, g = 0, b = 0, a = 0.67}
     self.clearBtn:initialise()
     self.clearBtn:instantiate()
@@ -171,121 +215,74 @@ function AdminRadZonePanel:initialise()
     self.exitBtn:initialise()
     self.exitBtn:instantiate()
     self:addChild(self.exitBtn)
-
-    self.tempX = round(getPlayer():getX())
-    self.tempY = round(getPlayer():getY())
-
-end
---[[ 
-function AdminRadZonePanel:onRadiusChange()
-    self.tempRad = tonumber(self.radiusEntry:getText()) or 5
-    if AdminRadZone.tempMarker and self.tempRad then
-        AdminRadZone.tempMarker:setSize(self.tempRad)
-    end
-    self.didChange = true
-    if  AdminRadZoneAdminData.state ~= "inactive"  then
-        if AdminRadZone.marker then
-            AdminRadZone.marker:setPos(self.tempX, self.tempY, 0)
-        end
-        AdminRadZone.doTransmit(AdminRadZoneAdminData)
-    else
-        if AdminRadZone.tempMarker then
-            AdminRadZone.tempMarker:setPos(self.tempX, self.tempY, 0)
-        end
+    AdminRadZoneData.x = AdminRadZoneData.x or -1
+    AdminRadZoneData.y = AdminRadZoneData.y or -1
+    if AdminRadZoneData.x ~=  -1 and AdminRadZoneData.y ~=  -1 then
+        self.didChange = true
     end
 end
- ]]
-
 function AdminRadZonePanel:onRoundsChange()
-    self.tempRounds = tonumber(self.roundsEntry:getText()) or 5
-    self.didChange = true
-end
-
-function AdminRadZonePanel:onXY() 
-    local pl = getPlayer()
-    if not pl then return end 
     
-    self.tempX = round(pl:getX())
-    self.tempY = round(pl:getY())
-    
-    if  AdminRadZoneAdminData.state ~= "inactive"  then
-        if AdminRadZone.marker then
-            AdminRadZone.marker:setPos(self.tempX, self.tempY, 0)
-        end
-        AdminRadZone.doTransmit(AdminRadZoneAdminData)
-    else
-        if AdminRadZone.tempMarker then
-            AdminRadZone.tempMarker:setPos(self.tempX, self.tempY, 0)
-        end
-    end
+    self.tempRounds = self.roundsEntry:getText()
     self.didChange = true
-   -- AdminRadZone.doTransmit(AdminRadZoneAdminData)
-
 end
 function AdminRadZonePanel.onExit()
     AdminRadZonePanel.ClosePanel()    
 end
 
-function AdminRadZonePanel.onClear()
-    AdminRadZone.clear()
-end
-
 function AdminRadZonePanel:onRun()
-    self:doApply()    
-    AdminRadZoneAdminData.state = "active"
-    sendClientCommand(getPlayer(), "AdminRadZone", "Run", {data = AdminRadZoneAdminData})
-    AdminRadZone.doTransmit(AdminRadZoneAdminData)
-end
-function AdminRadZonePanel:doApply()
-    local prevState = AdminRadZoneAdminData.state   
 
-    if self.tempX and self.tempY  then
-        AdminRadZoneAdminData.x =  self.tempX
-        AdminRadZoneAdminData.y =  self.tempY
+    --local running = AdminRadZone.showStates[AdminRadZoneData.state]
+    if AdminRadZoneData.state == 'inactive' or AdminRadZoneData.state == 'cooldown'  then
+        AdminRadZoneData.state = "active"
+        AdminRadZoneData.run = true
+        AdminRadZone.startZone(AdminRadZoneData)
     end
-   if self.tempRad then
-       
-        AdminRadZoneAdminData.rad = self.tempRad
-    end
-    if self.tempRounds then
-       
-        AdminRadZoneAdminData.rounds = self.tempRounds or  self.roundsEntry: getInternalText()
-    end    
+    --ModData.transmit('AdminRadZoneData')
 end
 function AdminRadZonePanel:onApply()
-    self:doApply()
---[[     if self.prevState  and self.prevState ~= AdminRadZoneAdminData.state then
-        AdminRadZoneAdminData.state = prevState  
-    end ]]
-    AdminRadZone.doTransmit(AdminRadZoneAdminData)
-   -- self.prevState = AdminRadZoneAdminData.state   
-end
-
-function AdminRadZonePanel.onPausePlay()
     
-    if AdminRadZoneAdminData.state == "pause" then
-        AdminRadZoneAdminData.state = "active"
-    else
-        AdminRadZoneAdminData.state = "pause"
-    end
-
-    AdminRadZone.doTransmit(AdminRadZoneAdminData)
+    AdminRadZoneData.x = AdminRadZoneData.x or -1
+    AdminRadZoneData.y = AdminRadZoneData.y or -1
+    AdminRadZoneData.rad = self.tempRad    or AdminRadZoneData.rad 
+    AdminRadZoneData.rounds = self.tempRounds    or AdminRadZoneData.rounds 
+    AdminRadZoneData.duration = 0
+    AdminRadZoneData.cooldown = 0
+    if AdminRadZoneData.rounds <= 0 or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then
+        AdminRadZoneData.state = "inactive"
+        AdminRadZoneData.rounds = self.tempRounds
+    end    
+    
+    --AdminRadZone.doTransmit(AdminRadZoneData)
+    ModData.transmit('AdminRadZoneData')
+    self.didChange = false
 end
+function AdminRadZonePanel.onPausePlay()
+    if AdminRadZoneData.state == "pause" then
+        AdminRadZoneData.state = "active"
+    else
+        AdminRadZoneData.state = "pause"
+    end
+    ModData.transmit('AdminRadZoneData')
 
-
+    --AdminRadZone.doTransmit(AdminRadZoneData)
+end
 function AdminRadZonePanel.onTeleport()
-    if AdminRadZoneAdminData.x and AdminRadZoneAdminData.y and AdminRadZoneAdminData.x ~= -1 and AdminRadZoneAdminData.y ~= -1 then
+    getSoundManager():playUISound("UIActivateButton")
+    local running = AdminRadZone.isShouldShowMarker()
+    local data = running and AdminRadZoneData 
+    
+    if data.x and data.y and data.x ~= -1 and data.y ~= -1 then
         local pl = getPlayer()
         if pl then
-            pl:setX(AdminRadZoneAdminData.x)
-            pl:setY(AdminRadZoneAdminData.y)
-            pl:setLx(AdminRadZoneAdminData.x)
-            pl:setLy(AdminRadZoneAdminData.y)
+            pl:setX(data.x)
+            pl:setY(data.y)
+            pl:setLx(data.x)
+            pl:setLy(data.y)
             pl:setZ(0)
         end
     end
 end
-
 function AdminRadZonePanel:render()
     ISPanel.render(self)
 end
@@ -296,150 +293,22 @@ AdminRadZone.panelColors = {
     ["inactive"] = {r=0.5, g=0.5, b=0.5, a=0.8},    
     ["active"] = {r=0.2, g=0.85, b=0.2, a=0.8},        
 }
-
-function AdminRadZonePanel:update()
-    ISPanel.update(self)
-    
-    if not AdminRadZoneAdminData then return end
-    
-    self.statusText = AdminRadZoneAdminData.state or "inactive"
-    self.statusColor = AdminRadZone.panelColors[AdminRadZoneAdminData.state] or AdminRadZone.panelColors["inactive"]
-    
-    self.statusValueLabel.name = AdminRadZoneAdminData.state or "inactive"
-    self.statusValueLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
-    
-    local pl = getPlayer()
-    if not pl then  AdminRadZonePanel.ClosePanel() end
-    local px, py = math.floor(pl:getX()), math.floor(pl:getY())
-    local sq = pl:getCurrentSquare()
-
-
-    self.playerCoordLabel.name = "player:\n" .. px .. "  x  " .. py
-   
-    
-    local mx = AdminRadZoneAdminData.x or -1
-    local my = AdminRadZoneAdminData.y or -1
-    self.markerCoordLabel.name = "marker:\n" .. mx .. "  x  " .. my
-    
-    self.currentRoundLabel.name = "Round: " .. AdminRadZoneAdminData.rounds
-    self.tempRad = self.radSlider.currentValue or SandboxVars.AdminRadZone.DefaultRadius or 4
-
-    local currentRadius = AdminRadZoneAdminData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4 
-    self.currentRadiusLabel.name = "Current: " .. tostring(self.tempRad)
-    
-    self.tempRounds = tonumber(self.roundsEntry:getText())
-
-    local cooldownTime = SandboxVars.AdminRadZone.Cooldown or 60
-    local durationTime = SandboxVars.AdminRadZone.RoundDuration or 60
-
-    
-    local totalTime = (self.tempRounds * durationTime) + ((self.tempRounds - 1) * cooldownTime)
-    
-    local minutes = math.floor(totalTime / 60)
-    local seconds = totalTime % 60
-    local timeStr = ""
-    if minutes > 0 then
-        timeStr = minutes .. "m " .. seconds .. "s"
-    else
-        timeStr = seconds .. "s"
-    end
-    self.totalTimeValueLabel.name = timeStr
-    
-
-
-    local timerText = "--"
-    if AdminRadZoneAdminData.state == "active" and AdminRadZoneAdminData.duration and AdminRadZoneAdminData.duration > 0 then
-        timerText = "Shrink: " .. AdminRadZoneAdminData.duration .. "s"
-    elseif AdminRadZoneAdminData.state == "cooldown" and AdminRadZoneAdminData.cooldown and AdminRadZoneAdminData.cooldown > 0 then
-        timerText = "Cool: " .. AdminRadZoneAdminData.cooldown .. "s"
-    end
-    self.timerLabel.name = "Timer: " .. timerText
-
-    
-    self.borderColor = self.statusColor
-    self.titleLabel:setColor(self.statusColor.r,self.statusColor.g,self.statusColor.b)
-    self.pausePlayBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
-
-    
-    if AdminRadZoneAdminData.state == "pause" then
-        self.pausePlayBtn:setTitle("Unpause")
-    elseif AdminRadZoneAdminData.state == "active" then
-        self.pausePlayBtn:setTitle("Pause")
-    end
-
-    self.applyBtn.enable = false
-    self.runBtn.enable = false
-
-    if self.didChange then
-        self.applyBtn.enable = true
-        if AdminRadZoneAdminData.state ~= "active" and AdminRadZoneAdminData.state ~= "cooldown" then
-            self.runBtn.enable = true
-        end
-    end
-    if AdminRadZoneAdminData.x == -1 or  AdminRadZoneAdminData.y == -1 then
-        self.teleportBtn.enable = false
-    else
-        self.teleportBtn.enable = true
-    end
-    
-
-    if AdminRadZoneAdminData.state == "inactive" then
-        self.pausePlayBtn.enable = false
-        self.clearBtn.enable = false
-    else
-        self.pausePlayBtn.enable = true
-        self.clearBtn.enable = true
-    end
-
-    if not AdminRadZone.tempMarker then
-        if sq then
-            local col = AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
-            AdminRadZone.tempMarker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Highlight", "AdminRadZone_Highlight", sq,
-                1, 0.2, 0.2, true, self.tempRad
-            )
-        end
-    else        
-
-    end
-
-end
-
-
---[[ 
-
-function AdminRadZone.updateTempMarker()
-    if AdminRadZone.tempMarker then
-        getWorldMarkers():remove(AdminRadZone.tempMarker)
-        AdminRadZone.tempMarker = nil
-    end
-
-    if AdminRadZoneAdminData.tempMarker then
-        local t = AdminRadZoneAdminData.tempMarker
-        local sq = getCell():getGridSquare(t.x, t.y, t.z)
-        if sq then
-            AdminRadZone.tempMarker = getWorldMarkers():addGridSquareMarker(
-                "AdminRadZone_Highlight", "", sq,
-                t.r, t.g, t.b, true, 0.8
-            )
-        end
-    end
-end
- ]]
+-----------------------            ---------------------------
 function AdminRadZonePanel.ClosePanel()
-    if AdminRadZone.tempMarker then
-        AdminRadZone.tempMarker:remove()
-        AdminRadZone.tempMarker = nil
-    end
     if AdminRadZonePanel.instance then
+        AdminRadZone.forceSwap = true
+        if AdminRadZone.marker and AdminRadZoneData.state == 'inactive' then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
         AdminRadZonePanel.instance:setVisible(false)
         AdminRadZonePanel.instance:removeFromUIManager()
         AdminRadZonePanel.instance = nil
     end
 end
-
 function AdminRadZonePanel.OpenPanel()
     if not AdminRadZonePanel.instance then
+        AdminRadZone.forceSwap = true
         local x = getCore():getScreenWidth() / 3
         local y = getCore():getScreenHeight() / 2 - 200
         local w, h = 270, 400
@@ -449,12 +318,94 @@ function AdminRadZonePanel.OpenPanel()
     AdminRadZonePanel.instance:addToUIManager()
     AdminRadZonePanel.instance:setVisible(true)
 end
-
-
 function AdminRadZonePanel.TogglePanel()
+    
     if AdminRadZone.isAdm(getPlayer()) and AdminRadZonePanel.instance == nil then
         AdminRadZonePanel.OpenPanel() 
     else
         AdminRadZonePanel.ClosePanel()
     end
+end
+-----------------------            ---------------------------
+function AdminRadZonePanel:update()
+    ISPanel.update(self)
+    local running = AdminRadZone.isShouldShowMarker()
+    if not AdminRadZoneData then return end
+    if not AdminRadZoneData then AdminRadZoneData = {} end
+     -----------------------            ---------------------------
+    local state = AdminRadZoneData.state 
+    local liveData = AdminRadZoneData
+    local tempData = AdminRadZoneData
+    local data = AdminRadZoneData
+    -----------------------            ---------------------------
+    self.statusText = state
+    self.statusColor = AdminRadZone.panelColors[state] or AdminRadZone.panelColors["inactive"]
+    self.statusValueLabel.name = state or "inactive"
+    self.statusValueLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
+    local pl = getPlayer()
+    if not pl or not AdminRadZone.isAdm(pl)  then AdminRadZonePanel.ClosePanel() end
+    local px, py = round(pl:getX()), round(pl:getY())
+    self.playerCoordLabel.name = "\n" .. px .. "  x  " .. py
+    local durationTime = AdminRadZoneData.duration or 0
+    local totalTime = AdminRadZone.getTotalTime() --AdminRadZoneData.totalTime or ( ( (AdminRadZoneData.rounds or 1) * durationTime) + ((AdminRadZoneData.rounds or 1) - 1) * AdminRadZoneData.cooldown )
+    -----------------------            ---------------------------
+    -----------------------            ---------------------------
+    local timerText = "--"
+    if data.state == "active" then
+        timerText = "Shrink: " .. tostring(data.duration or 0) .. "s"
+    elseif data.state == "cooldown" then
+        timerText = "Cool: " .. tostring(data.cooldown or 0) .. "s"
+    end
+    local minutes = math.floor(totalTime / 60)
+    local seconds = totalTime % 60
+    local timeStr = (minutes > 0) and (minutes .. "m " .. seconds .. "s") or (seconds .. "s")
+    -----------------------            ---------------------------
+    self.tempRounds = tonumber(self.roundsEntry:getText()) or SandboxVars.AdminRadZone.DefaultRounds  or 5
+
+    self.totalTimeValueLabel.name = timeStr
+    self.markerCoordLabel.name = "Zone:\n" .. tostring(AdminRadZoneData.x or -1) .. "  x  " .. tostring(AdminRadZoneData.y or -1)    
+    -----------------------            ---------------------------
+    if data.state ~= "inactive" then
+        self.currentRoundLabel.name = "Rounds: " .. tostring(AdminRadZoneData.rounds)        
+        self.currentRadiusLabel.name = "Radius: " .. tostring(AdminRadZoneData.rad)
+    else
+        self.currentRoundLabel.name = "Rounds: " .. tostring(self.tempRounds or AdminRadZoneData.rounds )
+        self.currentRadiusLabel.name = "Radius: " .. tostring(self.tempRad or AdminRadZoneData.rad)
+    end
+    
+    self.timerLabel.name = "Timer: " .. timerText
+    self.borderColor = self.statusColor
+    self.titleLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
+    self.pausePlayBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
+    -----------------------            ---------------------------
+    if state == "pause" then
+        self.pausePlayBtn:setTitle("UNPAUSE")
+        self.pausePlayBtn.enable = true
+    elseif state == "active" or state == "cooldown" then
+        self.pausePlayBtn:setTitle("PAUSE")
+        self.pausePlayBtn.enable = true
+    else            
+        self.pausePlayBtn:setTitle("PAUSE")
+        self.pausePlayBtn.enable = false
+    end
+    
+    -----------------------            ---------------------------
+    self.runBtn.enable = AdminRadZone.isCanRun() and not running
+    
+    if state == "cooldown" then
+        self.runBtn:setTitle("Continue")
+        self.runBtn.enable = true
+    else
+        self.runBtn:setTitle("Run")
+        self.runBtn.enable = not AdminRadZone.isIncomplete() and AdminRadZone.isCanRun(  AdminRadZoneData.x , AdminRadZoneData.y, self.tempRad or AdminRadZoneData.rad)  
+    end
+   
+    self.applyBtn.enable = self.didChange and AdminRadZoneData.x ~= -1 and AdminRadZoneData.y ~= -1
+    self.teleportBtn.enable = not (AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1)
+   
+    -----------------------            ---------------------------
+	self.statusIcon.backgroundColor.r = self.borderColor.r;
+	self.statusIcon.backgroundColor.g = self.borderColor.g;
+	self.statusIcon.backgroundColor.b = self.borderColor.b;
+
 end

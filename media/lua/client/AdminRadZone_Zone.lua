@@ -13,79 +13,176 @@ end
 function AdminRadZone.floor(n) 
     return math.floor(n + 0.5) 
 end
------------------------            ---------------------------
 
-local ticks = 0
+-----------------------            ---------------------------
+--[[ local ticks = 0
 function AdminRadZone.RadiationMarker()
     ticks = ticks + 1
     local pl = getPlayer()
+    if not pl then return end
+    local bodyDamage = pl:getBodyDamage()
+    local RadDamage = SandboxVars.AdminRadZone.RadDamage or 8.5
 
-    if ticks % 2 ~= 0 then return end
+    if ticks % 30 == 0 then
+        if AdminRadZoneData.state == "inactive" then
+            if AdminRadZone.SickMarker then
+                AdminRadZone.SickMarker:remove()
+                AdminRadZone.SickMarker = nil
+            end
+            return
+        end
+        if AdminRadZone.isOutOfBound(pl) then
+            AdminRadZone.wasOut = true
 
-    if AdminRadZoneData.state == "inactive" then
+            local sickness = bodyDamage:getFoodSicknessLevel()
+            if sickness > 60 then
+                if ZombRand(0, 5) == 2 then
+                    bodyDamage:ReduceGeneralHealth(RadDamage)
+                end
+                bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+                if ticks % 300 == 0 and SandboxVars.AdminRadZone.doNVG then
+                    AdminRadZone.doRadNvg()
+                    bodyDamage:setHasACold(true)
+                end
+            elseif sickness > 40 then
+                if ZombRand(0, 5) == 2 then
+                    bodyDamage:ReduceGeneralHealth(RadDamage)
+                end
+                bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+            else
+                bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+            end
+
+        elseif AdminRadZone.wasOut then
+            bodyDamage:setFoodSicknessLevel(math.max(0, bodyDamage:getFoodSicknessLevel() - RadDamage))
+            pl:setHealth(math.min(pl:getMaxHealth(), pl:getHealth() + RadDamage))
+        end
+    end
+
+    if ticks >= 2000 then
+        ticks = 0
+        AdminRadZone.wasOut = false
+    end
+end
+Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
+ ]]
+
+local ticks = 0
+
+function AdminRadZone.radiate(marker, val)
+    marker = marker or AdminRadZone.SickMarker or nil
+    if not marker then return end
+    local step = math.floor(val / 1000)
+    local result = ((step % 10) + 10) % 10 + 1
+    marker:setSize(result)
+end
+
+function AdminRadZone.RadiationMarker(pl)
+
+    if not AdminRadZoneData or AdminRadZoneData.state == "inactive" then  
         if AdminRadZone.SickMarker then
             AdminRadZone.SickMarker:remove()
             AdminRadZone.SickMarker = nil
         end
-
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        return 
+        return
     end
 
-    if not pl then return end 
+    if AdminRadZone.isOutOfBound(pl) then
+        ticks = ticks + 1
+        if ticks % 250 == 0 then
+            AdminRadZone.wasOut = false            
+        end
+        if ticks % 5000 == 0 then
+            AdminRadZone.RadiationDamage(pl)
+        end
 
-    if AdminRadZone.isOutOfBound(pl) then 
-        if not AdminRadZone.SickMarker then
+            AdminRadZone.wasOut = true
+
+            if AdminRadZone.SickMarker then
+                AdminRadZone.SickMarker:remove()
+                AdminRadZone.SickMarker = nil
+            end
             local sq = pl:getCurrentSquare()
             if sq then
                 local col = AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
                 AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(
-                    "AdminRadZone_Highlight", "", sq,
+                    "AdminRadZone_Img"..tostring(ZombRand(2,5)), "AdminRadZone_Img"..tostring(ZombRand(2,5)), sq,
                     col.r, col.g, col.b, true, 0.4
                 )
             end
-        else
-            AdminRadZone.SickMarker:setPos(pl:getX(), pl:getY(), pl:getZ())
-            AdminRadZone.SickMarker:setSize(math.max(0, math.min(1, ticks/10)))
-        end
+        
+            AdminRadZone.SickMarker:setPos(pl:getX(), pl:getY(), pl:getZ())           
+            AdminRadZone.radiate(AdminRadZone.SickMarker, ticks)
+            if ticks % 6000 == 0 then
+                ticks = 0
+                AdminRadZone.RadiationDamage(pl)
+                AdminRadZone.doRadSpr()
+            end
     else
         if AdminRadZone.SickMarker then
             AdminRadZone.SickMarker:remove()
             AdminRadZone.SickMarker = nil
         end
-    end
-    
-    -----------------------            ---------------------------
-    if AdminRadZone.isOutOfBound(pl) then 
-        local stats = pl:getStats()
-        if not stats then return end 
-    
-        local RadDamage = SandboxVars.AdminRadZone.RadDamage or 8.5
-        RadDamage = math.min(1, math.max(0, stats:getSickness() + (RadDamage / 100)))
-        stats:setSickness(RadDamage)
-
-        if stats:getSickness() > 0.2 then
-            if ticks % 5 == 0 and SandboxVars.AdminRadZone.doRadFloorVisual then
-                AdminRadZone.doRadSpr()
-            end
-            if ticks % 10 == 0 and SandboxVars.AdminRadZone.doNVG then
-                AdminRadZone.doRadNvg()
-            end
+        if AdminRadZone.wasOut then
+            bodyDamage:setFoodSicknessLevel(math.max(0, bodyDamage:getFoodSicknessLevel() - RadDamage))
+            pl:setHealth(math.min(pl:getMaxHealth(), pl:getHealth() + RadDamage))
         end
     end
-    if ticks >= 100 then ticks = 0 end
 
 end
 Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
 
+
+function AdminRadZone.RadiationDamage(pl)
+    pl = pl or getPlayer()
+    if not AdminRadZoneData or AdminRadZoneData.state == "inactive" then return end
+
+    local bodyDamage = pl:getBodyDamage()
+    local RadDamage = SandboxVars.AdminRadZone.RadDamage or 8.5
+
+        if SandboxVars.AdminRadZone.playSFX  then
+            local audio = "AdminRadZone_Warn"..tostring(ZombRand(1,3))
+            pl:playSoundLocal(audio)
+        end
+
+
+        if SandboxVars.AdminRadZone.doNVG and ZombRand(0,3) == 0 then
+            AdminRadZone.doRadNvg()
+        end
+        AdminRadZone.wasOut = true
+        local sickness = bodyDamage:getFoodSicknessLevel()
+        
+        if sickness > 60 then
+            if ZombRand(0, 3) == 2 then
+                bodyDamage:ReduceGeneralHealth(RadDamage)
+            end
+            bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+            if SandboxVars.AdminRadZone.doRadFloorVisual  then
+                AdminRadZone.doRadSpr()
+            end
+            bodyDamage:setHasACold(true)
+        elseif sickness > 40 then
+            if ZombRand(0, 5) == 2 then
+                bodyDamage:ReduceGeneralHealth(RadDamage)
+            end
+            bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+            bodyDamage:setHasACold(true)
+           
+        else
+            bodyDamage:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
+        end
+
+
+end
+
+
  function AdminRadZone.isOutOfBound(pl)
-    if not AdminRadZoneData then return false end
-    
     pl = pl or getPlayer()
     if not pl then return false end
+
+    if not AdminRadZoneData then return false end
+    if  AdminRadZoneData.x == -1 or  AdminRadZoneData.y == -1 then return false end
+    
 
     local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
     local sq = pl:getCurrentSquare()
@@ -98,18 +195,17 @@ Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
     return distSq > (rad * rad)
 end
 
-
-function AdminRadZone.doRadNvg()
-    local pl = getPlayer()
+function AdminRadZone.doRadNvg(pl)
+    pl = pl or getPlayer()
     if not pl then return end
     pl:setWearingNightVisionGoggles(true)
     pl:startMuzzleFlash()
-    AdminRadZone.pauseForSeconds(1, function()
+    AdminRadZone.halt(0.2, function()
         pl:setWearingNightVisionGoggles(false)
     end)
 end
 
-function AdminRadZone.pauseForSeconds(seconds, callback)
+function AdminRadZone.halt(seconds, callback)
     local start = getTimestampMs()
     local duration = seconds * 1000
     local function tick()
@@ -122,10 +218,17 @@ function AdminRadZone.pauseForSeconds(seconds, callback)
 end
 
 function AdminRadZone.getRadColor(pick)
-    pick = pick or (SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 5
-    return AdminRadZone.getMarkerColor(1, pick)
+    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 1
+    local colors = {
+        {r=1, g=0.2, b=0.2},     -- red
+        {r=1, g=0.5, b=0},       -- orange  
+        {r=1, g=1, b=0.2},       -- yellow
+        {r=0.2, g=1, b=0.2},     -- green
+        {r=0.2, g=0.5, b=1},     -- blue
+        {r=0.8, g=0.2, b=0.8},   -- purple
+    }
+    return colors[pick] or colors[1]
 end
-
 function AdminRadZone.doRadSpr()
     local pl = getPlayer()
     if not pl then return end
@@ -148,11 +251,10 @@ function AdminRadZone.doRadSpr()
     obj:setBlink(true)
     obj:setOutlineHlBlink(true)
 
-    AdminRadZone.pauseForSeconds(0.5, function() obj:setSprite(sprName2) end)
-    AdminRadZone.pauseForSeconds(1, function() obj:setSprite(sprName3) end)
-    AdminRadZone.pauseForSeconds(1.5, function() AdminRadZone.doSledge(obj) end)
+    AdminRadZone.halt(0.5, function() obj:setSprite(sprName2) end)
+    AdminRadZone.halt(1, function() obj:setSprite(sprName3) end)
+    AdminRadZone.halt(1.5, function() AdminRadZone.doSledge(obj) end)
 end
-
 function AdminRadZone.doSledge(obj)
     if not obj then return end
     if isClient() then

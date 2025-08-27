@@ -7,8 +7,6 @@ Sandbox_EN = {
     Sandbox_AdminRadZone_DamageDelay_tooltip = "Determines the amount of pause before doing next radiation damage",
     
 
-    Sandbox_AdminRadZone_StepDelay = "Step Delay",
-    Sandbox_AdminRadZone_StepDelay_tooltip = "Determines the amount of pause in betwween radiation zone shrink step. 1000 is 1 second",
 
     Sandbox_AdminRadZone_MarkerColor = "Radiation Zone Color",
 	Sandbox_AdminRadZone_MarkerColor_option1 = "Gray",
@@ -24,11 +22,35 @@ Sandbox_EN = {
 	Sandbox_AdminRadZone_MarkerColor_option11 = "Disabled",
 
 
-    Sandbox_AdminRadZone_DefaultRadius = "Default Radius",
+	Sandbox_AdminRadZone_RadColor = "Radiation Zone Color",
+	Sandbox_AdminRadZone_RadColor_option1 = "Red"
+	Sandbox_AdminRadZone_RadColor_option2 = "Orange "
+	Sandbox_AdminRadZone_RadColor_option3 = "Yellow"
+	Sandbox_AdminRadZone_RadColor_option4 = "Green"
+	Sandbox_AdminRadZone_RadColor_option5 = "Blue"
+	Sandbox_AdminRadZone_RadColor_option6 = "Purple"
 
-    Sandbox_AdminRadZone_DataString = "Data String DO NOT TOUCH",
-    Sandbox_AdminRadZone_DataString_tooltip = "DO NOT CHANGE THIS NO MATTER WHAT",
-    
-    
+    Sandbox_AdminRadZone_DefaultRadius = "Default Radius",    
+    Sandbox_AdminRadZone_DefaultRounds = "Default Rounds",
+
+    Sandbox_AdminRadZone_RadDamage = "Radiation Damage",
+
+    Sandbox_AdminRadZone_Cooldown = "Cooldown Time",
+
+    Sandbox_AdminRadZone_RoundDuration = "Round Duration",
+    Sandbox_AdminRadZone_RoundDuration_tooltip = "Duration of each round",
+
+    Sandbox_AdminRadZone_doRadFloorVisual = "Out of bound visuals 1",
+    Sandbox_AdminRadZone_doNVG = "Out of bound visuals 2",
+
+    Sandbox_AdminRadZone_playSFX = "Out of bound sound effects",
+
+    Sandbox_AdminRadZone_ShrinkAlertAudio = "Radiation Warning Alert Sound Effects",
+    Sandbox_AdminRadZone_ShrinkAlertMessage = "Radiation Warning Alert Message",
+
+
+
+
+
 
 }

@@ -1,0 +1,22 @@
+
+
+module Base
+{
+    sound AdminRadZone_Warn1
+    {
+        category = UI,
+        clip { file = media/sound/AdminRadZone_Warn1.ogg,   distanceMax = 1500, is3D = true, volume = 0.40, }
+    }
+    sound AdminRadZone_Warn2
+    {
+        category = UI,
+        clip { file = media/sound/AdminRadZone_Warn2.ogg,   distanceMax = 1500, is3D = true, volume = 0.20, }
+    }
+    sound AdminRadZone_Warning
+    {
+        category = UI,
+        clip { file = media/sound/AdminRadZone_Warning.ogg,   distanceMax = 1500, is3D = true, volume = 0.20, }
+    }
+
+
+}
