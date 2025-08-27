@@ -34,7 +34,10 @@ end
     pl = pl or getPlayer()
 
     if not pl then return false end
-
+    if  getCore():getDebug() then 
+        pl:setHaloNote(tostring('isOutOfBound'),150,250,150,300) 
+    end
+	
     if not AdminRadZoneData then return false end
     if not AdminRadZoneData.state then return false end
     
@@ -136,20 +139,20 @@ function AdminRadZone.doRadSpr()
     sq:AddTileObject(obj);
 
     local col = AdminRadZone.getRadColor(5)
-    obj:setHighlightColor(col);
+    obj:setHighlightColor(col.r or 1, col.g or 0, col.b or 0,  1);
     obj:setHighlighted(true, false);
 --[[     obj:setOutlineHighlightCol( col.r or 1, col.g or 0, col.b or,  1);
     obj:setOutlineThickness(1); ]]
     obj:setOutlineHighlight(true);
     obj:setBlink(true);
     obj:setOutlineHlBlink(true);
-    AdminRadZone.pauseForSeconds(0.5, function() 
+    AdminRadZone.halt(0.5, function() 
          obj:setSprite(sprName2)
     end)
-    AdminRadZone.pauseForSeconds(1, function() 
+    AdminRadZone.halt(1, function() 
          obj:setSprite(sprName3)
     end)
-    AdminRadZone.pauseForSeconds(1.5, function() 
+    AdminRadZone.halt(1.5, function() 
          AdminRadZone.doSledge(obj)
     end)
 end

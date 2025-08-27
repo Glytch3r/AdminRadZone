@@ -450,10 +450,31 @@ function AdminRadZonePanel:update()
         end
     end
 
-   
+    if AdminRadZoneData.x == -1 and  AdminRadZoneData.y == -1 then
+        self.runBtn.enable = false 
+        self.applyBtn.enable = false
+    end
+
+    if AdminRadZoneData.state == "active" then
+        self.runBtn.enable = false 
+    end
+
     -----------------------            ---------------------------
 	self.statusIcon.backgroundColor.r = self.borderColor.r;
 	self.statusIcon.backgroundColor.g = self.borderColor.g;
 	self.statusIcon.backgroundColor.b = self.borderColor.b;
 
+end
+
+function AdminRadZone.getRadColor(pick)
+    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 1
+    local colors = {
+        {r=1, g=0.2, b=0.2},     -- red
+        {r=1, g=0.5, b=0},       -- orange  
+        {r=1, g=1, b=0.2},       -- yellow
+        {r=0.2, g=1, b=0.2},     -- green
+        {r=0.2, g=0.5, b=1},     -- blue
+        {r=0.8, g=0.2, b=0.8},   -- purple
+    }
+    return colors[pick] or colors[1]
 end
