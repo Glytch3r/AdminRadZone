@@ -23,8 +23,6 @@ function AdminRadZone.context(player, context, worldobjects, test)
 
 	if not x or not y then return end
 	if getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
- 
-
         local tip = ISWorldObjectContextMenu.addToolTip()
 		local mainMenu = "Admin Radiation Zone: "..tostring(AdminRadZoneData.state)
 		local Main = context:addOptionOnTop(tostring(mainMenu), worldobjects, function()

@@ -202,23 +202,30 @@ function AdminRadZone.core(module, command, args)
             pl:Say(args.msg)
         end
     elseif command == "Warning"  then
+
         local pl = getPlayer()
+        if not pl then return end 
+
         if SandboxVars.AdminRadZone.ShrinkAlertAudio then
-            sfx = pl:playSound("AdminRadZone_Warning");            
+            pl:getEmitter():playSound("AdminRadZone_Warning")         
         end
+
+        local x,y,z = pl:getX(), pl:getY(), pl:getZ()
+        if x and y and z then
+            local lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, 0, 255, 0, 255))
+            AdminRadZone.halt(3, function()
+                pl:getCell():removeLamppost(x,y,z)
+            end)
+        end
+
         AdminRadZone.halt(7.5, function()
             if SandboxVars.AdminRadZone.ShrinkAlertMessage then
                 pl:startMuzzleFlash()
-                local x,y,z = pl:getX(), pl:getY(), pl:getZ()
-                local lamp = pl:getCell():addLamppost(IsoLightSource.new(pl:getX(), pl:getY(), pl:getZ(), 0, 255, 0, 255))
-                AdminRadZone.halt(3, function()
-                    pl:getCell():removeLamppost(x,y,z)
-                end)
                 ISChat.instance.servermsgTimer = 5000
                 ISChat.instance.servermsg = tostring("Radiation Warning")
             end
-       
         end)
+
     elseif command == "Fetch" and args.data then
         AdminRadZone.doFetch(args.data)
     end
@@ -294,147 +301,3 @@ function AdminRadZone.isShouldShowMarker()
     end
     return false
 end
-
-function AdminRadZone.updateClientMarker(pl)
-    local data = AdminRadZoneData
-    if not data or not data.state then return end
-    if data.x == -1 or data.y == -1 then return end
-    if not data.rad   then return end
-    local sq = getCell():getOrCreateGridSquare(data.x, data.y, 0)
-    if not sq then return end
-    
-    AdminRadZone.markCol = AdminRadZone.markCol or AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-    AdminRadZone.shouldPick = AdminRadZone.shouldPick or "AdminRadZone_Img1"
-
-    local function spawnMarker()
-        if AdminRadZonePanel.instance ~= nil then
-            AdminRadZone.markCol = AdminRadZone.stateColors[AdminRadZoneData.state]
-            AdminRadZone.shouldPick = "AdminRadZone_Img2"
-        else
-            AdminRadZone.markCol = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-            AdminRadZone.shouldPick = "AdminRadZone_Img1"
-        end
-        
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        if AdminRadZone.forceSwap ~= nil  then
-            AdminRadZone.shouldPick = AdminRadZone.swapImg[AdminRadZone.shouldPick] 
-            AdminRadZone.forceSwap = nil
-        end
-        AdminRadZone.markerChoice = AdminRadZone.markerChoice or AdminRadZone.swapImg[AdminRadZone.markerChoice] 
-        AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-            AdminRadZone.shouldPick, 
-            AdminRadZone.markerChoice,
-            sq,
-            AdminRadZone.markCol.r,
-            AdminRadZone.markCol.g,
-            AdminRadZone.markCol.b,
-            true,
-            data.rad
-        )
-      --  AdminRadZone.markerChoice = AdminRadZone.shouldPick
-    end
-
-    if AdminRadZone.forceSwap ~= nil  then
-        spawnMarker()  
-        return 
-    end
-
-    if AdminRadZone.isShouldShowMarker() then
-        if not AdminRadZone.marker then
-            spawnMarker()     
-            return
-        else
-            AdminRadZone.marker:setPosAndSize(data.x, data.y, pl:getZ(), data.rad )
-            --AdminRadZone.marker:setSize(data.rad)
-            --AdminRadZone.marker:setPos(data.x, data.y, 0)
-        end
-    else
-       if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-    end
-
-    if AdminRadZone.marker then
-        if AdminRadZone.markerChoice ~= AdminRadZone.shouldPick then
-            spawnMarker()  
-        end
-        
-        if AdminRadZone.marker:getR() ~= AdminRadZone.markCol.r then AdminRadZone.marker:setR(AdminRadZone.markCol.r) end
-        if AdminRadZone.marker:getG() ~= AdminRadZone.markCol.g then AdminRadZone.marker:setG(AdminRadZone.markCol.g) end
-        if AdminRadZone.marker:getB() ~= AdminRadZone.markCol.b then AdminRadZone.marker:setB(AdminRadZone.markCol.b) end
-    end
-end
-Events.OnPlayerUpdate.Add(AdminRadZone.updateClientMarker)
------------------------            ---------------------------
---[[ 
-function AdminRadZone.updateClientMarker()
-    local data = AdminRadZoneData
-    if not data or not data.state then return end
-    if data.x == -1 or data.y == -1 or not data.rad then
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        return
-    end
-
-    local sq = getCell():getOrCreateGridSquare(data.x, data.y, 0)
-    if not sq then return end
-
-    local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-    local imgChoice = "AdminRadZone_Img1"
-
-    if AdminRadZonePanel.instance ~= nil then
-        col = AdminRadZone.stateColors[data.state] or col
-        imgChoice = "AdminRadZone_Img2"
-    end
-
-    local function spawnMarker()
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-        AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-            imgChoice,
-            imgChoice,  -- match highlightName to texture
-            sq,
-            col.r, col.g, col.b,
-            true,
-            data.rad
-        )
-    end
-
-    if AdminRadZone.isShouldShowMarker() then
-        if not AdminRadZone.marker then
-            spawnMarker()
-        else
-            -- If texture changed, respawn
-            if AdminRadZone.marker:getTextureName() ~= imgChoice then
-                spawnMarker()
-            else
-                -- update size/pos only when panel is closed
-                if not AdminRadZonePanel.instance then
-                    AdminRadZone.marker:setSize(data.rad)
-                    AdminRadZone.marker:setPos(data.x, data.y, 0)
-                end
-            end
-        end
-    else
-        if AdminRadZone.marker then
-            AdminRadZone.marker:remove()
-            AdminRadZone.marker = nil
-        end
-    end
-
-    -- always enforce color in case state changed
-    if AdminRadZone.marker then
-        AdminRadZone.updateMarkerColor(AdminRadZone.marker)
-    end
-end
-
-Events.OnPlayerUpdate.Add(AdminRadZone.updateClientMarker)
- ]]

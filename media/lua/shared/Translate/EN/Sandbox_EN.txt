@@ -46,8 +46,11 @@ Sandbox_EN = {
     Sandbox_AdminRadZone_RoundDuration = "Round Duration",
     Sandbox_AdminRadZone_RoundDuration_tooltip = "Duration of each round",
 
-    Sandbox_AdminRadZone_doRadFloorVisual = "Out of bound visuals 1",
-    Sandbox_AdminRadZone_doNVG = "Out of bound visuals 2",
+    Sandbox_AdminRadZone_FloorVisualChance = "Out of bound visuals 1",
+    Sandbox_AdminRadZone_FloorVisualChance_tooltip  = "Chance to do sprite radiation visual effect. set to 0 to disable",
+
+    Sandbox_AdminRadZone_NVGChance = "Out of bound visuals 2",
+    Sandbox_AdminRadZone_NVGChance_tooltip  = "Chance to do NVG visual effect. set to 0 to disable",
 
     Sandbox_AdminRadZone_playSFX = "Out of bound sound effects",
 

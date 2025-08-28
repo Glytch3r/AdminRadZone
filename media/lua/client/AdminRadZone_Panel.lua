@@ -179,7 +179,7 @@ function AdminRadZonePanel:initialise()
         self.didChange = true
         self.markerCoordLabel.name = "Zone:\n" .. tostring(AdminRadZoneData.x) .. "  x  " .. tostring(AdminRadZoneData.y)    
         ModData.transmit('AdminRadZoneData')
- 
+    
     end)
     self.selectSquareBtn.borderColor = {r = 0.41, g = 0.80, b = 1.0, a = 1}
     self.selectSquareBtn:initialise()
@@ -219,6 +219,12 @@ function AdminRadZonePanel:initialise()
     self.exitBtn:initialise()
     self.exitBtn:instantiate()
     self:addChild(self.exitBtn)
+
+
+    self.boundsLabel = ISLabel:new(margin + buttonWidth * 2+5, y-buttonHeight-5, labelHeight, "OUT OF BOUNDS", 1, 0, 0, 0, UIFont.Small, true)
+    self:addChild(self.boundsLabel)
+
+
     AdminRadZoneData.x = AdminRadZoneData.x or -1
     AdminRadZoneData.y = AdminRadZoneData.y or -1
     if AdminRadZoneData.x ~=  -1 and AdminRadZoneData.y ~=  -1 then
@@ -272,7 +278,6 @@ end
 function AdminRadZonePanel.onPausePlay()
     if AdminRadZoneData.state == "pause" then
         AdminRadZoneData.state = "active"
-        self.runBtn.enable = false
     else
         AdminRadZoneData.state = "pause"
     end
@@ -303,10 +308,9 @@ end
 AdminRadZone.panelColors = {
     ["pause"] = { r = 0.99, g = 0.49, b = 0.00, a=0.8},      
     ["cooldown"] = {r = 0.09, g = 0.52, b = 0.82, a=0.8},    
-    ["inactive"] = {r = 0.22, g = 0.22, b = 0.12, a=0.8},    
+    ["inactive"] = {r = 0.52, g = 0.52, b = 0.62, a=0.8},    
     ["active"] = { r = 0.46, g = 0.84, b = 0.49, a=0.8},        
 }
-
 -----------------------            ---------------------------
 function AdminRadZonePanel.ClosePanel()
     if AdminRadZonePanel.instance then
@@ -392,7 +396,7 @@ function AdminRadZonePanel:update()
         if AdminRadZoneData.roundsTotal then roundsTotal = tostring(AdminRadZoneData.roundsTotal) end
         if AdminRadZoneData.radTotal then radTotal = tostring(AdminRadZoneData.radTotal) end
     end
-
+    
 
     if data.state ~= "inactive" then
         self.currentRoundLabel.name = "Rounds: " .. tostring(AdminRadZoneData.rounds) 
@@ -409,8 +413,18 @@ function AdminRadZonePanel:update()
     
 
     self.borderColor = self.statusColor
+
     self.timerLabel.name = "Timer:\n" .. timerText
     self.timerLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
+
+    if AdminRadZoneData.x == -1 and AdminRadZoneData.y == -1 then
+        self.markerCoordLabel:setColor(1, 0, 0)        
+        self.timerLabel:setColor(1, 0, 0)      
+    else
+        self.markerCoordLabel:setColor(1,1,1)
+        self.timerLabel:setColor(1,1,1)
+    end
+
 
     self.titleLabel:setColor(self.statusColor.r, self.statusColor.g, self.statusColor.b)
     self.pausePlayBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
@@ -427,54 +441,63 @@ function AdminRadZonePanel:update()
     end
     
     -----------------------            ---------------------------
+    if not AdminRadZoneData.run then
+        self.pausePlayBtn:setTitle("PAUSE")
+        self.pausePlayBtn.enable = false
+    end
+
+    -----------------------            ---------------------------
     self.runBtn.enable = false
-    
-    if data.state == "cooldown" then
-        self.runBtn:setTitle("Continue")
-        self.runBtn.enable = true
-
-    else
-        self.runBtn:setTitle("Run")
-        self.runBtn.enable = true
-
-    end
-    
-    if  not AdminRadZoneData.x == -1 and not AdminRadZoneData.y == -1 then
+    if  AdminRadZoneData.x ~= -1 and not AdminRadZoneData.y ~= -1 then
         self.applyBtn.borderColor = {r = self.statusColor.r, g = self.statusColor.g, b = self.statusColor.b, a = 0.8}
-        self.applyBtn.enable = true
-        
+        self.applyBtn.enable = true        
         self.teleportBtn.enable = true
-        self.applyBtn.enable = self.didChange 
-        if not data.state ~= "active" then
-            self.runBtn.enable = data.state ~= "pause" 
+        self.runBtn.enable = data.state == "cooldown" or data.state == "inactive"
+    
+        if data.state == "cooldown" then
+            self.runBtn:setTitle("Continue")
+            self.runBtn.enable = true
+        elseif data.state == "active" or  data.state == "pause"  then
+            self.runBtn:setTitle("Run")
+            self.runBtn.enable = false
+        else
+            self.runBtn:setTitle("Run")
+            self.runBtn.enable = true
         end
-    end
-
-    if AdminRadZoneData.x == -1 and  AdminRadZoneData.y == -1 then
+        
+    else
         self.runBtn.enable = false 
         self.applyBtn.enable = false
     end
 
-    if AdminRadZoneData.state == "active" then
-        self.runBtn.enable = false 
-    end
+
 
     -----------------------            ---------------------------
 	self.statusIcon.backgroundColor.r = self.borderColor.r;
 	self.statusIcon.backgroundColor.g = self.borderColor.g;
 	self.statusIcon.backgroundColor.b = self.borderColor.b;
+-----------------------            ---------------------------
+    self.boundsLabel.name = AdminRadZone.getBoundStr(pl)
+
+    if not AdminRadZoneData.run then
+        self.boundsLabel.a = 0
+        self.boundsLabel.backgroundColor.a = 0
+    else
+        self.boundsLabel.a = 1
+        self.boundsLabel.backgroundColor.r = 1
+        if AdminRadZone.isOutOfBound(pl)  then  
+            self.boundsLabel.r = 1
+            self.boundsLabel.g = 0
+            self.boundsLabel.backgroundColor.r = 1
+            self.boundsLabel.backgroundColor.r = 1
+        else
+            self.boundsLabel.r = 0
+            self.boundsLabel.g = 1
+            self.boundsLabel.backgroundColor.r = 0
+            self.boundsLabel.backgroundColor.a = 1
+        end
+    end
 
 end
 
-function AdminRadZone.getRadColor(pick)
-    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 1
-    local colors = {
-        {r=1, g=0.2, b=0.2},     -- red
-        {r=1, g=0.5, b=0},       -- orange  
-        {r=1, g=1, b=0.2},       -- yellow
-        {r=0.2, g=1, b=0.2},     -- green
-        {r=0.2, g=0.5, b=1},     -- blue
-        {r=0.8, g=0.2, b=0.8},   -- purple
-    }
-    return colors[pick] or colors[1]
-end
+

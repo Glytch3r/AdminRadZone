@@ -187,10 +187,11 @@ function AdminRadZone.OnServerClockUpdate(curSec)
         AdminRadZoneData.cooldown = math.max(0, AdminRadZoneData.cooldown - 1)
         if AdminRadZoneData.cooldown <= 0 then
             AdminRadZoneData.state = "active"
-                pl:getEmitter():playSound("AdminRadZone_Warning")
+
+             
 
 
-            sendServerCommand("AdminRadZone", "Warning", {})
+                sendServerCommand("AdminRadZone", "Warning", {})
 
 
         end

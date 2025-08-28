@@ -51,16 +51,16 @@ option AdminRadZone.DeactivateRadZero
 	page = AdminRadZone, translation = AdminRadZone_DeactivateRadZero,
 }
 
-option AdminRadZone.doRadFloorVisual
+option AdminRadZone.FloorVisualChance
 {
-	type = boolean, default = true,
-	page = AdminRadZone, translation = AdminRadZone_doRadFloorVisual,
+	type = double,	 min = 0.00,  max = 100,  default = 10,
+	page = AdminRadZone, translation = AdminRadZone_FloorVisualChance,
 }
 
-option AdminRadZone.doNVG
+option AdminRadZone.NVGChance
 {
-	type = boolean, default = true,
-	page = AdminRadZone, translation = AdminRadZone_doNVG,
+	type = double,	 min = 0.00,  max = 100,  default = 10,
+	page = AdminRadZone, translation = AdminRadZone_NVGChance,
 }
 
 option AdminRadZone.playSFX
