@@ -1,0 +1,53 @@
+
+--[[ 
+AdminRadZone = AdminRadZone or {}
+
+function AdminRadZone.symHandler()
+    if not SandboxVars.AdminRadZone.MapSymbols then return end
+    local data = AdminRadZoneData
+    if not data then return end
+
+    if not data.run then 
+        if AdminRadZoneSym then
+            AdminRadZoneSym:setRGBA(0, 0, 0, 0)            
+        end
+        return 
+    else
+        if not data.state then return end
+
+        local x, y = data.x, data.y
+        if not x or not y then return end
+        if x == -1 or y == -1 then return end
+
+
+
+        local mapAPI = ISWorldMap_instance.javaObject:getAPIv1()
+        local symAPI = mapAPI:getSymbolsAPI()
+
+        if not AdminRadZoneSym then
+            AdminRadZoneSym = symAPI:addTexture("Circle", x, y)
+        end
+
+        if AdminRadZoneSym then
+            AdminRadZoneSym:setAnchor(0.5, 0.5)
+            if data.state == 'active'  then
+                local col = AdminRadZone.panelColors[data.state]
+                if not col then return end
+                local r,g,b = col.r or 1, col.g or 0, col.b or 0
+                AdminRadZoneSym:setRGBA(r,g,b, 1)
+
+                local rad = data.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
+                if not rad then return end
+
+                if AdminRadZoneSym  then
+                    AdminRadZoneSym:setScale(rad)
+                    AdminRadZoneSym:setScaleCircleTexture(rad)
+                end
+
+            end
+        end
+    end    
+end
+Events.OnRenderTick.Remove(AdminRadZone.symHandler)
+Events.OnRenderTick.Add(AdminRadZone.symHandler)
+-----------------------            ------------------------- ]]

@@ -212,10 +212,14 @@ function AdminRadZone.core(module, command, args)
 
         local x,y,z = pl:getX(), pl:getY(), pl:getZ()
         if x and y and z then
+        --[[      
             local lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, 0, 255, 0, 255))
             AdminRadZone.halt(3, function()
                 pl:getCell():removeLamppost(x,y,z)
-            end)
+            end) 
+        ]]
+            
+            AdminRadZone.doFader(x, y, z)
         end
 
         AdminRadZone.halt(7.5, function()
@@ -301,3 +305,76 @@ function AdminRadZone.isShouldShowMarker()
     end
     return false
 end
+
+-----------------------            ---------------------------
+
+AdminRadZone.a = 255
+function AdminRadZone.fader(x, y, z, r, g, b)
+    local pl = getPlayer() 
+    AdminRadZone.a = 255
+    local function ticker(t)
+        t=t+1
+
+        if t % 8 == 0 then 
+            AdminRadZone.a = AdminRadZone.a - 1
+            if AdminRadZone.lamp then
+                pl:getCell():removeLamppost(x,y,z)
+            end
+
+            if AdminRadZone.a <= 0 then        
+                AdminRadZone.a = 255
+                Events.OnTick.Remove(ticker)
+            else
+                AdminRadZone.a = AdminRadZone.a - 1
+                AdminRadZone.lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, r, g, b, AdminRadZone.a))
+            end
+        end
+    end
+    Events.OnTick.Add(ticker)
+end
+
+function AdminRadZone.doFader(x, y, z)        
+    if AdminRadZone.a == 255 then
+        local col = AdminRadZone.getRadColor()
+        AdminRadZone.fader(x, y, z, col.r*255, col.g*255, col.b*255)
+    end
+end
+--[[ 
+
+local pl = getPlayer()
+local x, y, z = round(pl:getX()),  round(pl:getY()),  pl:getZ() or 0
+
+ AdminRadZone.doFader(x, y, z)    
+ ]]
+--[[ 
+
+
+AdminRadZone.a = 255
+function AdminRadZone.fader(x, y, z, r, g, b)
+    local pl = getPlayer() 
+    AdminRadZone.a = 255
+    local function ticker(t)
+        t=t+1
+        AdminRadZone.a = AdminRadZone.a - 1
+        if AdminRadZone.lamp then
+            pl:getCell():removeLamppost(x,y,z)
+        end
+        if t % 4 == 0 then 
+            if AdminRadZone.a <= 0 then        
+                AdminRadZone.a = 255
+                Events.OnTick.Remove(ticker)
+            else
+                AdminRadZone.lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, r, g, b, AdminRadZone.a))
+            end
+        end
+    end
+    Events.OnTick.Add(ticker)
+end
+
+function AdminRadZone.doFader(x, y, z)   
+  
+    if AdminRadZone.a == 255 then
+        local col = AdminRadZone.getRadColor()
+        AdminRadZone.fader(x, y, z, col.r*255, col.g*255, col.b*255)
+    end
+end ]]
