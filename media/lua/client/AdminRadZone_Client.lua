@@ -104,7 +104,7 @@ function AdminRadZone.initClient()
     AdminRadZoneData.y = AdminRadZoneData.y or -1
     AdminRadZoneData.run = AdminRadZoneData.run or false
     AdminRadZoneData.totalTime = AdminRadZoneData.totalTime or AdminRadZone.getTotalTime() or 0
-    AdminRadZoneData.remainingTime = AdminRadZoneData.remainingTime or AdminRadZone.getRemainingTime() or 0
+    AdminRadZoneData.remainingTime = AdminRadZoneData.remainingTime or 0
     
     return AdminRadZoneData
 end
@@ -151,20 +151,21 @@ AdminRadZone.stateColors = {
 }
 
 
+function AdminRadZone.isPanelInit()
+    return AdminRadZonePanel and  AdminRadZonePanel.instance and AdminRadZonePanel.instance:getIsVisible()
+end
 
-function AdminRadZone.updateColorProperties(marker)
-    marker = marker or AdminRadZone.marker
-    if not marker then return end
+function AdminRadZone.updateColorProperties()
     local col
-    if AdminRadZonePanel.instance ~= nil and AdminRadZoneData and AdminRadZoneData.state then
+    if AdminRadZone.isPanelInit() and AdminRadZoneData and AdminRadZoneData.state then
         col = AdminRadZone.stateColors[AdminRadZoneData.state]
     else
         col = AdminRadZone.getMarkerColor()
     end
-
-    if marker:getR() ~= col.r then marker:setR(col.r) end
-    if marker:getG() ~= col.g then marker:setG(col.g) end
-    if marker:getB() ~= col.b then marker:setB(col.b) end
+    
+    if AdminRadZone.marker:getR() ~= col.r then AdminRadZone.marker:setR(col.r) end
+    if AdminRadZone.marker:getG() ~= col.g then AdminRadZone.marker:setG(col.g) end
+    if AdminRadZone.marker:getB() ~= col.b then AdminRadZone.marker:setB(col.b) end
 end
 
 
@@ -219,7 +220,7 @@ function AdminRadZone.core(module, command, args)
             end) 
         ]]
             
-            AdminRadZone.doFader(x, y, z)
+            AdminRadZone.doLamp(x, y, z)
         end
 
         AdminRadZone.halt(7.5, function()
@@ -250,10 +251,10 @@ function AdminRadZone.getTotalTime()
 
     return activeTime + cooldownTime
 end
-
+--[[ 
 function AdminRadZone.getRemainingTime()
     if not AdminRadZoneData then return 0 end
-
+  
     local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
     local cooldown = SandboxVars.AdminRadZone.Cooldown or 60
     local rounds = AdminRadZoneData.rounds or 0
@@ -274,10 +275,12 @@ function AdminRadZone.getRemainingTime()
                 remainingTime = remainingTime + ((rounds - 1) * cooldown)
             end
         end
+    elseif AdminRadZoneData.state == "pause" then
+        return math.max(0, remainingTime) or "PAUSED"
     end
 
     return math.max(0, remainingTime)
-end
+end ]]
 -----------------------            ---------------------------
 AdminRadZone.showStates = {
     ["active"] = true,
@@ -288,23 +291,6 @@ AdminRadZone.swapImg = {
     ["AdminRadZone_Img2"] = "AdminRadZone_Img1",
     ["AdminRadZone_Img1"] = "AdminRadZone_Img2",
 }
-
-
-function AdminRadZone.isShouldShowMarker()
-    if not AdminRadZoneData then return false end
-    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return false end
-    
-    if AdminRadZonePanel.instance ~= nil then 
-        AdminRadZone.markerChoice = "AdminRadZone_Img2"
-        return true 
-    else
-        AdminRadZone.markerChoice = "AdminRadZone_Img1"
-    end
-    if AdminRadZoneData  then
-        return AdminRadZone.showStates[AdminRadZoneData.state] == true 
-    end
-    return false
-end
 
 -----------------------            ---------------------------
 
@@ -333,7 +319,7 @@ function AdminRadZone.fader(x, y, z, r, g, b)
     Events.OnTick.Add(ticker)
 end
 
-function AdminRadZone.doFader(x, y, z)        
+function AdminRadZone.doLamp(x, y, z)        
     if AdminRadZone.a == 255 then
         local col = AdminRadZone.getRadColor()
         AdminRadZone.fader(x, y, z, col.r*255, col.g*255, col.b*255)
@@ -344,7 +330,7 @@ end
 local pl = getPlayer()
 local x, y, z = round(pl:getX()),  round(pl:getY()),  pl:getZ() or 0
 
- AdminRadZone.doFader(x, y, z)    
+ AdminRadZone.doLamp(x, y, z)    
  ]]
 --[[ 
 
@@ -371,7 +357,7 @@ function AdminRadZone.fader(x, y, z, r, g, b)
     Events.OnTick.Add(ticker)
 end
 
-function AdminRadZone.doFader(x, y, z)   
+function AdminRadZone.doLamp(x, y, z)   
   
     if AdminRadZone.a == 255 then
         local col = AdminRadZone.getRadColor()

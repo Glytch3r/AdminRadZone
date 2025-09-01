@@ -23,13 +23,17 @@ Sandbox_EN = {
 
 
     Sandbox_AdminRadZone_RadColor = "Out of bound Indicator Color",
-	Sandbox_AdminRadZone_RadColor_option1 = "Red"
-	Sandbox_AdminRadZone_RadColor_option2 = "Orange "
-	Sandbox_AdminRadZone_RadColor_option3 = "Yellow"
-	Sandbox_AdminRadZone_RadColor_option4 = "Green"
-	Sandbox_AdminRadZone_RadColor_option5 = "Blue"
-	Sandbox_AdminRadZone_RadColor_option6 = "Purple"
-
+	Sandbox_AdminRadZone_RadColor_option1 = "Gray",
+	Sandbox_AdminRadZone_RadColor_option2 = "Red",
+	Sandbox_AdminRadZone_RadColor_option3 = "Orange",
+	Sandbox_AdminRadZone_RadColor_option4 = "Yellow",
+	Sandbox_AdminRadZone_RadColor_option5 = "Green",
+	Sandbox_AdminRadZone_RadColor_option6 = "Blue",
+	Sandbox_AdminRadZone_RadColor_option7 = "Purple",
+	Sandbox_AdminRadZone_RadColor_option8 = "Black",
+	Sandbox_AdminRadZone_RadColor_option9 = "White",
+	Sandbox_AdminRadZone_RadColor_option10 = "Pink",
+	Sandbox_AdminRadZone_RadColor_option11 = "Disabled",
 
 
     Sandbox_AdminRadZone_DeactivateRadZero = "Deactivate Zone When Radius 0",    

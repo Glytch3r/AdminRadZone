@@ -107,7 +107,9 @@ function AdminRadZone.startServer()
         if not PZCalendar or not PZCalendar.getInstance() then return end
         local curSec = PZCalendar.getInstance():get(Calendar.SECOND)
         if AdminRadZone.prevSec ~= curSec then
-            triggerEvent("OnClockUpdate", curSec)
+            if not AdminRadZone.isOnHold() then
+                triggerEvent("OnClockUpdate", curSec)
+            end
             AdminRadZone.prevSec = curSec
         end
     end
@@ -151,8 +153,15 @@ function AdminRadZone.clientSync(module, command, player, args)
             AdminRadZoneData.run = true    
             AdminRadZoneData.state = 'active'    
         end
-        
-        sendServerCommand(player, "AdminRadZone", "Msg", {msg = "AdminRadZone: SERVER UPDATED"})
+        ModData.transmit("AdminRadZoneData")
+    elseif command == "Continue" and args.data then
+        AdminRadZone.updateData(args.data)
+        AdminRadZoneData.state = 'active'
+        ModData.transmit("AdminRadZoneData")
+    elseif command == "Pause" and args.data then
+        AdminRadZone.updateData(args.data)
+        AdminRadZoneData.state = 'pause'    
+        ModData.transmit("AdminRadZoneData")
     elseif command == "Update" or  command == "Sync" and args.data then
         AdminRadZone.updateData(args.data)
         sendServerCommand(player, "AdminRadZone", "Msg", {msg = "AdminRadZone: SERVER UPDATED"})
@@ -180,28 +189,28 @@ end
 
 function AdminRadZone.OnServerClockUpdate(curSec)
     if not AdminRadZoneData.run then return end
-    if AdminRadZoneData.state == "pause" or AdminRadZoneData.state == "inactive" then
-        return 
+    if (AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1)
+    and AdminRadZoneData.state ~= "inactive" then
+        AdminRadZoneData.state = "inactive"
+        AdminRadZone.doTransmit()
     end
     if AdminRadZoneData.state == "cooldown" then
-        AdminRadZoneData.cooldown = math.max(0, AdminRadZoneData.cooldown - 1)
+        if AdminRadZoneData.state ~= "pause" then
+            AdminRadZoneData.cooldown = math.max(0, AdminRadZoneData.cooldown - 1)
+        end
         if AdminRadZoneData.cooldown <= 0 then
             AdminRadZoneData.state = "active"
-
-             
-
-
-                sendServerCommand("AdminRadZone", "Warning", {})
-
-
+            sendServerCommand("AdminRadZone", "Warning", {})
         end
         AdminRadZone.doTransmit()
-        return  
-    end
-    if AdminRadZoneData.state == "active" then
+        return      
+    elseif AdminRadZoneData.state == "pause" or AdminRadZoneData.state == "inactive" then
+        return     
+    elseif AdminRadZoneData.state == "active" then
         local shrinkRate = AdminRadZone.getShrinkRate(AdminRadZoneData.rad, AdminRadZoneData.rounds)
-        AdminRadZoneData.rad = math.max(0, AdminRadZoneData.rad - shrinkRate)
-        
+        if AdminRadZoneData.state ~= "pause" then
+            AdminRadZoneData.rad = math.max(0, AdminRadZoneData.rad - shrinkRate)
+        end
         if AdminRadZoneData.rad <= 0 then 
             if SandboxVars.AdminRadZone.DeactivateRadZero then
                 AdminRadZoneData.run = false
@@ -213,25 +222,19 @@ function AdminRadZone.OnServerClockUpdate(curSec)
             AdminRadZoneData.duration = AdminRadZoneData.duration + 1
             if AdminRadZoneData.duration % (SandboxVars.AdminRadZone.RoundDuration or 60) == 0 then
                 AdminRadZoneData.duration = 0
-
                 AdminRadZoneData.cooldown = SandboxVars.AdminRadZone.Cooldown or 60
                 AdminRadZoneData.state = "cooldown"
+            
                 AdminRadZoneData.rounds = math.max(0, AdminRadZoneData.rounds - 1)
                 if AdminRadZoneData.rounds <= 0 then
                     AdminRadZoneData.state = "pause"
                 end
             end
         end
-   
-    
         AdminRadZone.doTransmit()
     end
     
-    if (AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1)
-    and AdminRadZoneData.state ~= "inactive" then
-        AdminRadZoneData.state = "inactive"
-        AdminRadZone.doTransmit()
-    end
+
 end
 Events.OnClockUpdate.Add(AdminRadZone.OnServerClockUpdate)
 

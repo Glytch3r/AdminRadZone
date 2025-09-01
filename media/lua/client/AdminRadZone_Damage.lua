@@ -17,45 +17,58 @@ end
 -----------------------            ---------------------------
 
 function AdminRadZone.getRadColor(pick)
-    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 1
+    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 3
+    
     local colors = {
-        {r=1, g=0, b=0},     -- red
-        {r=1, g=0.5, b=0},       -- orange  
-        {r=1, g=1, b=0.2},       -- yellow
-        {r=0.2, g=1, b=0.2},     -- green
-        {r=0.2, g=0.5, b=1},     -- blue
-        {r=0.8, g=0.2, b=0.8},   -- purple
+        ColorInfo.new(0.5, 0.5, 0.5),  -- gray
+        ColorInfo.new(1, 0, 0),        -- red
+        ColorInfo.new(1, 0.5, 0),      -- orange
+        ColorInfo.new(1, 1, 0),        -- yellow
+        ColorInfo.new(0, 1, 0),        -- green
+        ColorInfo.new(0, 0, 1),        -- blue
+        ColorInfo.new(0.5, 0, 0.5),    -- purple
+        ColorInfo.new(0, 0, 0),        -- black
+        ColorInfo.new(1, 1, 1),        -- white
+        ColorInfo.new(1, 0.75, 0.8),   -- pink
     }
-    return colors[pick] or colors[1]
+    
+    return colors[pick] or colors[3]
+end
+
+function AdminRadZone.removeSickMarker()
+    if AdminRadZone.SickMarker then
+        AdminRadZone.SickMarker:remove()
+        AdminRadZone.SickMarker = nil
+    end
 end
 
 function AdminRadZone.RadiationMarker(pl)
     pl = pl or getPlayer()
     if not pl then return end 
-    if AdminRadZone.SickMarker then
-        AdminRadZone.SickMarker:remove()
-        AdminRadZone.SickMarker = nil
-    end
-    if not AdminRadZoneData then return end
-    if not AdminRadZoneData.run then return end
 
-    if not AdminRadZone.SickMarker then
-        local sq = pl:getCurrentSquare()
-        if sq and AdminRadZoneData then
-            local img  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
-            local overlay  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
-            local rad = ZombRand(1, 101) / 100
-            local col = getCore():getMpTextColor()--AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
-            AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(img, overlay, sq, col.r or 0, col.g or 1, col.b or 0, true, rad)
+ 
+    if not AdminRadZoneData or not AdminRadZoneData.run or not AdminRadZone.isOutOfBound(pl) then
+        AdminRadZone.removeSickMarker()
+        return
+    end
+
+
+    if AdminRadZone.isOutOfBound(pl) then
+        if not AdminRadZone.SickMarker then
+            local sq = pl:getCurrentSquare()
+            if sq and AdminRadZoneData then
+                local img  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
+                local overlay  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
+                local rad = ZombRand(1, 101) / 100
+                local col = AdminRadZone.getRadColor() or getCore():getMpTextColor()--AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
+                AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(img, overlay, sq, col.r or 0, col.g or 1, col.b or 0, true, rad)
+            end
         end
-    elseif AdminRadZone.SickMarker then
-        if AdminRadZone.isOutOfBound(pl) then
+        if AdminRadZone.SickMarker then       
             AdminRadZone.SickMarker:setPosAndSize(pl:getX(), pl:getY(), pl:getZ(), ZombRand(1, 101) / 100)  
-        else
-            AdminRadZone.SickMarker:remove()
-            AdminRadZone.SickMarker = nil
         end   
     end
+
 end
 Events.OnPlayerUpdate.Remove(AdminRadZone.RadiationMarker)
 Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
@@ -63,7 +76,7 @@ Events.OnPlayerUpdate.Add(AdminRadZone.RadiationMarker)
 -----------------------            ---------------------------
 
 
-----------------e-------            ---------------------------
+-----------------------            ---------------------------
 
 
 
@@ -90,7 +103,6 @@ function AdminRadZone.RadiationHandler()
         end
     end
      
-
 end
 Events.EveryOneMinute.Remove(AdminRadZone.RadiationHandler)
 Events.EveryOneMinute.Add(AdminRadZone.RadiationHandler)
@@ -139,46 +151,11 @@ function AdminRadZone.getBoundStr(pl)
     local outOfBound = distSq > (rad * rad)
     local note = outOfBound and "OutOfBound" or "InBound"
 
---[[     if getCore():getDebug() and AdminRadZoneData.run then
-        local r, g, b = outOfBound and 250 or 150, outOfBound and 150 or 250, 150
-        pl:setHaloNote(note, r, g, b, 300)
-    end ]]
 
     return note
 end
 
 
---[[ 
-function AdminRadZone.isOutOfBound(pl)
-    pl = pl or getPlayer()
-    if not pl then return false end
-
-
-
-    if AdminRadZoneData.x == -1 or  AdminRadZoneData.y == -1 then return false end
-
-    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
-    local sq = pl:getCurrentSquare()
-    if not sq or not centerX or not centerY or not rad then return false end
-
-    local dx = sq:getX() - centerX
-    local dy = sq:getY() - centerY
-    local distSq = dx * dx + dy * dy
-
-    local bool = distSq > (rad * rad)
-
-
-    if getCore():getDebug() and bool then 
-        if AdminRadZoneData.run then
-            pl:setHaloNote(tostring('isOutOfBound'),150,250,150,300) 
-        end
-    end
-    
-
-
-
-    return bool
-end ]]
 -----------------------            ---------------------------
 function AdminRadZone.RadiationDamage(pl, RadDamage)
 
@@ -200,9 +177,6 @@ function AdminRadZone.RadiationDamage(pl, RadDamage)
             return
 
         end
-
-
-
         if sickness > 60 then bd:setHasACold(true) end
 
         bd:ReduceGeneralHealth(ZombRand(1, RadDamage))
