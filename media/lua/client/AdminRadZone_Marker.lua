@@ -12,7 +12,7 @@ function AdminRadZone.updateClientMarker(pl)
     local col = getCore():getMpTextColor() or ColorInfo.new(0.5, 0.5, 0.5, 1)
     AdminRadZone.shouldPick = AdminRadZone.shouldPick or "AdminRadZone_Img2"
 
-    local function spawnMarker()
+    function AdminRadZone.spawnMarker()
         if AdminRadZonePanel.instance then
             col = getCore():getMpTextColor() or ColorInfo.new(0.5, 0.5, 0.5, 1)
             AdminRadZone.shouldPick = "AdminRadZone_Img1"
@@ -42,9 +42,9 @@ function AdminRadZone.updateClientMarker(pl)
         )
     end
 
-    if AdminRadZone.isShouldShowMarker() then
+    if AdminRadZone.isShouldShowMarker() or AdminRadZone.forceSwap then
         if not AdminRadZone.marker then
-            spawnMarker()
+            AdminRadZone.spawnMarker()
         else
             AdminRadZone.marker:setPosAndSize(data.x, data.y, pl:getZ(), data.rad)
 
