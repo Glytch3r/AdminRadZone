@@ -1,6 +1,19 @@
 --client\AdminRadZone_Marker.lua
 AdminRadZone = AdminRadZone or {}
 
+
+function AdminRadZone.getColorProperties()
+    local col
+    if AdminRadZone.isPanelInit() then
+        col = getCore():getMpTextColor()
+        AdminRadZone.shouldPick = "AdminRadZone_Img1"
+    else
+        col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
+        AdminRadZone.shouldPick = "AdminRadZone_Img2"
+    end
+    return col
+end
+
 function AdminRadZone.updateClientMarker(pl)
     local data = AdminRadZoneData
     if not data or not data.state or not data.rad then return end
@@ -9,18 +22,10 @@ function AdminRadZone.updateClientMarker(pl)
     local sq = getCell():getOrCreateGridSquare(data.x, data.y, 0)
     if not sq then return end
 
-    local col = getCore():getMpTextColor() or ColorInfo.new(0.5, 0.5, 0.5, 1)
-    AdminRadZone.shouldPick = AdminRadZone.shouldPick or "AdminRadZone_Img2"
+    local col = AdminRadZone.getColorProperties()
 
     function AdminRadZone.spawnMarker()
-        if AdminRadZonePanel.instance then
-            col = getCore():getMpTextColor() or ColorInfo.new(0.5, 0.5, 0.5, 1)
-            AdminRadZone.shouldPick = "AdminRadZone_Img1"
-        else
-            col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-            AdminRadZone.shouldPick = "AdminRadZone_Img2"
-        end
-
+        col = AdminRadZone.getColorProperties()
         if AdminRadZone.forceSwap then
             AdminRadZone.shouldPick = AdminRadZone.swapImg[AdminRadZone.shouldPick]
             AdminRadZone.forceSwap = nil
@@ -31,10 +36,10 @@ function AdminRadZone.updateClientMarker(pl)
             AdminRadZone.marker = nil
         end
 
-        AdminRadZone.markerChoice = AdminRadZone.markerChoice or AdminRadZone.swapImg[AdminRadZone.markerChoice]
+        AdminRadZone.markerChoice = AdminRadZone.markerChoice or AdminRadZone.swapImg[AdminRadZone.shouldPick]
         AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
-            AdminRadZone.shouldPick,
-            AdminRadZone.shouldPick,
+            AdminRadZone.markerChoice,
+            AdminRadZone.markerChoice,
             sq,
             col.r, col.g, col.b,
             true,
@@ -43,14 +48,15 @@ function AdminRadZone.updateClientMarker(pl)
     end
 
     if AdminRadZone.isShouldShowMarker() or AdminRadZone.forceSwap then
-        if not AdminRadZone.marker then
+        if not AdminRadZone.marker or AdminRadZone.forceSwap then
             AdminRadZone.spawnMarker()
-        else
+        end
+        if AdminRadZone.marker then
+            col = AdminRadZone.getColorProperties()
             AdminRadZone.marker:setPosAndSize(data.x, data.y, pl:getZ(), data.rad)
-
-            if AdminRadZone.marker:getR() ~= col.r then AdminRadZone.marker:setR(col.r) end
-            if AdminRadZone.marker:getG() ~= col.g then AdminRadZone.marker:setG(col.g) end
-            if AdminRadZone.marker:getB() ~= col.b then AdminRadZone.marker:setB(col.b) end
+            AdminRadZone.marker:setR(col.r)
+            AdminRadZone.marker:setG(col.g)
+            AdminRadZone.marker:setB(col.b)
         end
     elseif AdminRadZone.marker then
         AdminRadZone.marker:remove()
@@ -70,6 +76,8 @@ function AdminRadZone.isShouldShowMarker()
         return true 
     else
         AdminRadZone.markerChoice = "AdminRadZone_Img1"
+        return true 
+
     end
     if AdminRadZoneData  then
         return AdminRadZone.showStates[AdminRadZoneData.state] == true 

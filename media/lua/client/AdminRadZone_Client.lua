@@ -154,7 +154,7 @@ AdminRadZone.stateColors = {
 function AdminRadZone.isPanelInit()
     return AdminRadZonePanel and  AdminRadZonePanel.instance and AdminRadZonePanel.instance:getIsVisible()
 end
-
+--[[ 
 function AdminRadZone.updateColorProperties()
     local col
     if AdminRadZone.isPanelInit() and AdminRadZoneData and AdminRadZoneData.state then
@@ -166,8 +166,9 @@ function AdminRadZone.updateColorProperties()
     if AdminRadZone.marker:getR() ~= col.r then AdminRadZone.marker:setR(col.r) end
     if AdminRadZone.marker:getG() ~= col.g then AdminRadZone.marker:setG(col.g) end
     if AdminRadZone.marker:getB() ~= col.b then AdminRadZone.marker:setB(col.b) end
+    return col
 end
-
+ ]]
 
 -----------------------            ---------------------------
 
