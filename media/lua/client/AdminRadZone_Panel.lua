@@ -76,7 +76,7 @@ function AdminRadZonePanel:initialise()
 
 
     AdminRadZone.tempRounds = AdminRadZoneData.rounds or SandboxVars.AdminRadZone.DefaultRounds  or 5
-    AdminRadZone.tempRad = AdminRadZone.tempRad or AdminRadZoneData.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
+    AdminRadZone.tempRad = AdminRadZoneData.rad or AdminRadZone.tempRad  or SandboxVars.AdminRadZone.DefaultRadius or 4
 
     self.roundsEntry = ISTextEntryBox:new(tostring(AdminRadZone.tempRounds), margin + 60, y - 2, entryWidth, 18)
     self.roundsEntry:initialise()

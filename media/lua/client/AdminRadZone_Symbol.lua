@@ -1,72 +1,97 @@
 AdminRadZone = AdminRadZone or {}
-
-function AdminRadZone.getTextureForRadius(rad)
-    if rad <= 128 then return "AdminRadZone_1" end
-    if rad <= 256 then return "AdminRadZone_2" end
-    if rad <= 512 then return "AdminRadZone_3" end
-    if rad <= 1024 then return "AdminRadZone_4" end
-    return "AdminRadZone_5"
+function AdminRadZone.hookInit()
+    AdminRadZone.Hook_ISWorldMapRender = AdminRadZone.Hook_ISWorldMapRender or ISWorldMap.render
+    AdminRadZone.Hook_ISMiniMapOuterRender = AdminRadZone.Hook_ISMiniMapOuterRender or ISMiniMapOuter.render
+    function ISWorldMap:render()
+        AdminRadZone.Hook_ISWorldMapRender(self)
+        local data = AdminRadZoneData
+        if data and data.state and data.x and data.y and data.rad and AdminRadZone.showZoneSymbol then
+            AdminRadZone.renderSym(self.mapAPI, data.x, data.y, data.rad, 1, 0, 0, 1, self, nil, nil, nil, 3)
+        end
+    end
+    function ISMiniMapOuter:render()
+        AdminRadZone.Hook_ISMiniMapOuterRender(self)
+        local data = AdminRadZoneData
+        if data and data.state and data.x and data.y and data.rad and AdminRadZone.showZoneSymbol then
+            local miniMapXOffset = self:getX() + self.inner:getX()
+            local miniMapYOffset = self:getY() + self.inner:getY()
+            local mask = {
+                x1 = miniMapXOffset,
+                x2 = miniMapXOffset + self.inner:getWidth(),
+                y1 = miniMapYOffset,
+                y2 = miniMapYOffset + self.inner:getHeight()
+            }
+            AdminRadZone.renderSym(self.inner.mapAPI, data.x, data.y, data.rad, 1,0,0,1, self, miniMapXOffset, miniMapYOffset, mask, 3)
+        end
+    end
 end
-
-function AdminRadZone.symHandler()
-    if not SandboxVars.AdminRadZone.MapSymbols then return end
-    local data = AdminRadZoneData
-    if not data then return end
-
-    if not data.run then 
-        if AdminRadZoneSym then
-            AdminRadZoneSym:setRGBA(0, 0, 0, 0)
+Events.OnGameStart.Add(AdminRadZone.hookInit)
+function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, drawTarget, uiXOffset, uiYOffset, mask, thickness)
+    thickness = thickness or 2
+    local angularStep = math.pi / 27
+    local screenCenterX = mapAPI:worldToUIX(posX, posY)
+    local screenCenterY = mapAPI:worldToUIY(posX, posY)
+    
+    if uiXOffset then
+        screenCenterX = screenCenterX + uiXOffset
+        screenCenterY = screenCenterY + uiYOffset
+    end
+    
+    local screenRadius = math.abs(mapAPI:worldToUIX(posX + radius, posY) - screenCenterX)
+    
+    for angularIter = 0, math.pi * 2, angularStep do
+        local xScreen1 = screenCenterX + screenRadius * math.cos(angularIter)
+        local yScreen1 = screenCenterY + screenRadius * math.sin(angularIter)
+        local xScreen2 = screenCenterX + screenRadius * math.cos(angularIter + angularStep)
+        local yScreen2 = screenCenterY + screenRadius * math.sin(angularIter + angularStep)
+        
+        local hide = false
+        if mask then
+            hide, xScreen1, yScreen1, xScreen2, yScreen2 = AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
         end
-        return 
-    else
-        if not data.state then return end
-
-        local x, y = data.x, data.y
-        if not x or not y or x == -1 or y == -1 then return end
-
-        if not ISWorldMap_instance then
-            ISWorldMap.ShowWorldMap(0)
-            ISWorldMap_instance:close()
-        end
-
-        local mapAPI = ISWorldMap_instance.javaObject:getAPIv1()
-        local symAPI = mapAPI:getSymbolsAPI()
-
-        if not AdminRadZoneSym then
-            AdminRadZoneSym = symAPI:addTexture("Circle", x, y)
-        end
-
-        if AdminRadZoneSym then
-            AdminRadZoneSym:setAnchor(0.5, 0.5)
-            if data.state == 'active' then
-                local col = AdminRadZone.panelColors[data.state]
-                if not col then return end
-                local r,g,b = col.r or 1, col.g or 0, col.b or 0
-                AdminRadZoneSym:setRGBA(r,g,b, 1)
-
-                local rad = data.rad or SandboxVars.AdminRadZone.DefaultRadius or 4
-                if not rad then return end
-                -- pick best texture for current radius
-                local tex = AdminRadZone.getTextureForRadius(rad)
-                --AdminRadZoneSym:setTexture(tex)
-                AdminRadZoneSym:setScale(1.0) 
-              --  AdminRadZoneSym:setScaleCircleTexture(true)
+        
+        if not hide then
+            if drawTarget then
+                local halfThickness = thickness / 2
+                drawTarget:drawRect(xScreen1-halfThickness, yScreen1-halfThickness, thickness, thickness, alpha, r, g, b)
+                drawTarget:drawRect(xScreen2-halfThickness, yScreen2-halfThickness, thickness, thickness, alpha, r, g, b)
             end
         end
     end
 end
-
-Events.OnRenderTick.Remove(AdminRadZone.symHandler)
---Events.OnRenderTick.Add(AdminRadZone.symHandler)
------------------------            ---------------------------
---[[ 
-local pl = getPlayer()
-local x, y, z = round(pl:getX()),  round(pl:getY()),  pl:getZ() or 0
-
-local mapAPI = ISWorldMap_instance.javaObject:getAPIv1()
-local symAPI = mapAPI:getSymbolsAPI()
-AdminRadZoneSym = symAPI:addTexture("circle", x, y)
-
-AdminRadZoneSym:setRGBA(1,1,1, 1)
-AdminRadZoneSym:setScale(2) 
- ]]
+function AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
+    if not mask then
+        return false, xScreen1, yScreen1, xScreen2, yScreen2
+    end
+    local hide = false
+    if (xScreen1 < mask.x1 and xScreen2 < mask.x1) or
+       (xScreen1 > mask.x2 and xScreen2 > mask.x2) or
+       (yScreen1 < mask.y1 and yScreen2 < mask.y1) or
+       (yScreen1 > mask.y2 and yScreen2 > mask.y2) then
+        hide = true
+        return hide, xScreen1, yScreen1, xScreen2, yScreen2
+    end
+    if xScreen1 < mask.x1 then xScreen1 = mask.x1 end
+    if xScreen1 > mask.x2 then xScreen1 = mask.x2 end
+    if yScreen1 < mask.y1 then yScreen1 = mask.y1 end
+    if yScreen1 > mask.y2 then yScreen1 = mask.y2 end
+    if xScreen2 < mask.x1 then xScreen2 = mask.x1 end
+    if xScreen2 > mask.x2 then xScreen2 = mask.x2 end
+    if yScreen2 < mask.y1 then yScreen2 = mask.y1 end
+    if yScreen2 > mask.y2 then yScreen2 = mask.y2 end
+    return hide, xScreen1, yScreen1, xScreen2, yScreen2
+end
+function AdminRadZone.symHandler()
+    local data = AdminRadZoneData
+    if not data then 
+        AdminRadZone.showZoneSymbol = false
+        return 
+    end
+    
+    if AdminRadZone.isShouldShowMarker() then
+        AdminRadZone.showZoneSymbol = true
+    else
+        AdminRadZone.showZoneSymbol = false
+    end
+end
+Events.OnPostRender.Add(AdminRadZone.symHandler)
