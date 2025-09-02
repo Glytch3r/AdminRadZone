@@ -21,11 +21,12 @@ function AdminRadZone.hookInit()
                 y1 = miniMapYOffset,
                 y2 = miniMapYOffset + self.inner:getHeight()
             }
-            AdminRadZone.renderSym(self.inner.mapAPI, data.x, data.y, data.rad, 1,0,0,1, self, miniMapXOffset, miniMapYOffset, mask, 3)
+            AdminRadZone.renderSym(self.inner.mapAPI, data.x, data.y, data.rad, 1,0,0,1, self.inner, miniMapXOffset, miniMapYOffset, mask, 3)
         end
     end
 end
 Events.OnGameStart.Add(AdminRadZone.hookInit)
+
 function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, drawTarget, uiXOffset, uiYOffset, mask, thickness)
     thickness = thickness or 2
     local angularStep = math.pi / 27
@@ -59,6 +60,7 @@ function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, draw
         end
     end
 end
+
 function AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
     if not mask then
         return false, xScreen1, yScreen1, xScreen2, yScreen2
@@ -81,7 +83,9 @@ function AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
     if yScreen2 > mask.y2 then yScreen2 = mask.y2 end
     return hide, xScreen1, yScreen1, xScreen2, yScreen2
 end
+
 function AdminRadZone.symHandler()
+    if not SandboxVars.AdminRadZone.MapMarker then return end
     local data = AdminRadZoneData
     if not data then 
         AdminRadZone.showZoneSymbol = false

@@ -44,4 +44,3 @@ function AdminRadZone.context(player, context, worldobjects, test)
 	end
 end
 Events.OnFillWorldObjectContextMenu.Add(AdminRadZone.context)
-

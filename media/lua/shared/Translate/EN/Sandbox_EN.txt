@@ -3,6 +3,10 @@ Sandbox_EN = {
 
     Sandbox_AdminRadZone = "Admin Radiation Zone",
 
+    Sandbox_AdminRadZone_VisibleIndicator = "Visible Indicator",
+    Sandbox_AdminRadZone_VisibleIndicator_tooltip = "Toggle the Upper right screen Indicator. This will allow regular players to determine the zone is shrinking or not",
+	
+
     Sandbox_AdminRadZone_DamageDelay = "Damage Delay",
     Sandbox_AdminRadZone_DamageDelay_tooltip = "Determines the amount of pause before doing next radiation damage",
     

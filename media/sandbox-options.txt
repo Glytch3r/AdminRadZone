@@ -1,4 +1,15 @@
 VERSION = 1,
+option AdminRadZone.VisibleIndicator
+{
+	type = boolean, default = true,
+	page = AdminRadZone, translation = AdminRadZone_VisibleIndicator,
+}
+
+option AdminRadZone.MapMarker 
+{
+	type = boolean, default = true,
+	page = AdminRadZone, translation = AdminRadZone_MapMarker ,
+}
 
 option AdminRadZone.RadDamage
 {
