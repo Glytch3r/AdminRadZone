@@ -129,35 +129,48 @@ end
 function AdminRadZone.isNormal()
     return not AdminRadZoneData or not AdminRadZoneData.run
 end
-
-function AdminRadZone.isOutOfBound(pl)
-    local str = AdminRadZone.getBoundStr(pl)
-    if str == "" then return false end
-    return str == "OutOfBound"
-end
-
 function AdminRadZone.getBoundStr(pl)
     pl = pl or getPlayer()
     if not pl then return "" end
     if not AdminRadZoneData or not AdminRadZoneData.state then return "" end
     if not AdminRadZoneData.run then return "" end
     if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return "" end
-
+    
     local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
     local sq = pl:getCurrentSquare()
     if not sq or not centerX or not centerY or not rad then return "" end
-
-    local dx = sq:getX() - centerX
-    local dy = sq:getY() - centerY
-    local distSq = dx * dx + dy * dy
-    local outOfBound = distSq > (rad * rad)
-    local note = outOfBound and "OutOfBound" or "InBound"
-
-
-    return note
+    
+    local sqX = sq:getX()
+    local sqY = sq:getY()
+    
+    local radiusX = rad
+    local radiusY = rad * 0.5 
+    
+    local dx = sqX - centerX
+    local dy = sqY - centerY
+    
+    local ellipseValue = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY)
+    
+--[[     local debugInfo = string.format(
+        "Player Square: %d, %d\nZone Center: %.2f, %.2f\nZone Radius: %.2f\nRadiusX: %.2f, RadiusY: %.2f\nDX: %.2f, DY: %.2f\nEllipse Value: %.3f\n",
+        sqX, sqY, centerX, centerY, rad, radiusX, radiusY, dx, dy, ellipseValue
+    ) ]]
+    
+    local inBound = ellipseValue <= 1
+    local result = inBound and "InBound" or "OutOfBound"
+    
+   -- debugInfo = debugInfo .. "Result: " .. result
+    
+    --Clipboard.setClipboard(debugInfo)
+    
+    return result
 end
 
-
+function AdminRadZone.isOutOfBound(pl)
+    local str = AdminRadZone.getBoundStr(pl)
+    if str == "" then return false end
+    return str == "OutOfBound"
+end
 -----------------------            ---------------------------
 function AdminRadZone.RadiationDamage(pl, RadDamage)
 
@@ -286,3 +299,107 @@ function AdminRadZone.doSledge(obj)
         end
     end
 end
+
+--[[ 
+function AdminRadZone.getBoundStr(pl)
+    pl = pl or getPlayer()
+    if not pl then return "" end
+    if not AdminRadZoneData or not AdminRadZoneData.state then return "" end
+    if not AdminRadZoneData.run then return "" end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return "" end
+    
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return "" end
+    
+    local playerX = sq:getX() + 0.5
+    local playerY = sq:getY() + 0.5
+    local zoneX = centerX + 0.5
+    local zoneY = centerY + 0.5
+    
+    local dx = playerX - zoneX
+    local dy = playerY - zoneY
+    local distance = math.sqrt(dx * dx + dy * dy)
+    
+    local inBound = distance <= rad
+    return inBound and "InBound" or "OutOfBound"
+end ]]
+
+--[[ 
+function AdminRadZone.getInBoundStr(pl)
+    pl = pl or getPlayer()
+    if not pl then return "" end
+    if not AdminRadZoneData or not AdminRadZoneData.state then return "" end
+    if not AdminRadZoneData.run then return "" end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return "" end
+
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return "" end
+
+    -- Treat tiles as unit squares [sx, sx+1] x [sy, sy+1].
+    -- Use center at (centerX + 0.5, centerY + 0.5) so circle origin is tile-center.
+    local cx = centerX + 0.5
+    local cy = centerY + 0.5
+    local sx = sq:getX()
+    local sy = sq:getY()
+
+    -- Closest point on the square to the circle center
+    local nearestX = math.max(sx, math.min(cx, sx + 1))
+    local nearestY = math.max(sy, math.min(cy, sy + 1))
+
+    local dx = nearestX - cx
+    local dy = nearestY - cy
+
+    local outOfBound = (dx * dx + dy * dy) <= (rad * rad) -- <= includes touching
+    return outOfBound and "OutOfBound" or "InBound"
+end
+
+ ]]
+--[[ 
+function AdminRadZone.getBoundStrFormula2(pl)
+
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return "" end
+
+    local sx, sy = sq:getX(), sq:getY()
+
+    local corners = {
+        {sx, sy},
+        {sx+1, sy},
+        {sx, sy+1},
+        {sx+1, sy+1},
+    }
+    local maxDistSq = 0
+    for _,c in ipairs(corners) do
+        local dx = c[1] - centerX
+        local dy = c[2] - centerY
+        local d2 = dx*dx + dy*dy
+        if d2 > maxDistSq then
+            maxDistSq = d2
+        end
+    end
+
+    local outOfBound = maxDistSq >= (rad * rad)
+    return outOfBound and "OutOfBound" or "InBound"
+end
+
+
+
+function AdminRadZone.getBoundStrFormula1(pl)
+
+
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return "" end
+
+    local dx = sq:getX() - centerX
+    local dy = sq:getY() - centerY
+    local distSq = dx * dx + dy * dy
+    local outOfBound = distSq > (rad * rad)
+    local note = outOfBound and "OutOfBound" or "InBound"
+
+
+    return note
+end ]]

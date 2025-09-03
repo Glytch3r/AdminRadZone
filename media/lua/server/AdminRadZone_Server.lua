@@ -154,6 +154,7 @@ function AdminRadZone.clientSync(module, command, player, args)
             AdminRadZoneData.state = 'active'    
         end
         ModData.transmit("AdminRadZoneData")
+        sendServerCommand(player, "AdminRadZone", "Run", {})
     elseif command == "Continue" and args.data then
         AdminRadZone.updateData(args.data)
         AdminRadZoneData.state = 'active'

@@ -169,6 +169,7 @@ function AdminRadZone.save(key, data)
     end
 end
 
+
 -----------------------            ---------------------------
 function AdminRadZone.core(module, command, args)
     if module ~= "AdminRadZone" then return end
@@ -194,7 +195,34 @@ function AdminRadZone.core(module, command, args)
 
         local x,y,z = pl:getX(), pl:getY(), pl:getZ()
         if x and y and z then
-            AdminRadZone.doLamp(x, y, z)
+           if AdminRadZone.lamp then 
+                getCell():removeLamppost(AdminRadZone.lamp) 
+            end
+            local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
+            local r, g, b = col:getR()*255,  col:getG()*255, col:getB()*255                
+            AdminRadZone.lamp =  getCell():addLamppost(IsoLightSource.new(x,y,z, r, g, b, 255))
+        end
+        AdminRadZone.halt(7.5, function()
+            if SandboxVars.AdminRadZone.ShrinkAlertMessage then
+                pl:startMuzzleFlash()
+                ISChat.instance.servermsgTimer = 5000
+                ISChat.instance.servermsg = tostring("Radiation Warning")
+            end
+        end)
+    elseif command == "Run" and args.data then
+        local pl = getPlayer()
+        if not pl then return end 
+        if SandboxVars.AdminRadZone.ShrinkAlertAudio then
+            pl:getEmitter():playSound("AdminRadZone_Warning")         
+        end
+        local x, y, z =   AdminRadZoneData.x ,   AdminRadZoneData.y , pl:getZ()
+        if x and y and z then
+           if AdminRadZone.lamp then 
+                getCell():removeLamppost(AdminRadZone.lamp) 
+            end
+            local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
+            local r, g, b = col:getR()*255,  col:getG()*255, col:getB()*255                
+            AdminRadZone.lamp =  getCell():addLamppost(IsoLightSource.new(x,y,z, r, g, b, 255))
         end
 
         AdminRadZone.halt(7.5, function()
@@ -204,7 +232,7 @@ function AdminRadZone.core(module, command, args)
                 ISChat.instance.servermsg = tostring("Radiation Warning")
             end
         end)
-
+    
     elseif command == "Fetch" and args.data then
         AdminRadZone.doFetch(args.data)
     end
