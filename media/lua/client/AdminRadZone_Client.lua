@@ -230,7 +230,7 @@ function AdminRadZone.core(module, command, args)
                 ISChat.instance.servermsg = tostring("Radiation Warning")
             end
         end)
-    elseif command == "Run" and args.data then
+    elseif command == "Run"  then
         local pl = getPlayer()
         if not pl then return end 
         if SandboxVars.AdminRadZone.ShrinkAlertAudio then

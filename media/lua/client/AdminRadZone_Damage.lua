@@ -150,6 +150,50 @@ end
 function AdminRadZone.isNormal()
     return not AdminRadZoneData or not AdminRadZoneData.run
 end
+
+function AdminRadZone.debugBoundStr(pl)
+    pl = pl or getPlayer()
+    if not pl then return end
+    if not AdminRadZoneData or not AdminRadZoneData.state then return end
+    if not AdminRadZoneData.run then return end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return end
+    
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return end
+    
+    local sqX = sq:getX()
+    local sqY = sq:getY()
+    
+    local dx = sqX - centerX
+    local dy = sqY - centerY
+    
+    local ratios = {
+        {1.0, 1.0, "Circle"},
+        {1.0, 0.5, "Wide 2:1"},
+        {0.5, 1.0, "Tall 1:2"},
+        {1.0, 0.75, "Wide 4:3"},
+        {0.75, 1.0, "Tall 3:4"}
+    }
+    
+    local debugInfo = string.format(
+        "Player Square: %d, %d\nZone Center: %.2f, %.2f\nZone Radius: %.2f\nDX: %.2f, DY: %.2f\n\n",
+        sqX, sqY, centerX, centerY, rad, dx, dy
+    )
+    
+    for i, ratio in ipairs(ratios) do
+        local radiusX = rad * ratio[1]
+        local radiusY = rad * ratio[2]
+        local ellipseValue = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY)
+        local inBound = ellipseValue <= 1
+        local result = inBound and "InBound" or "OutOfBound"
+        
+        debugInfo = debugInfo .. string.format("%s: Value=%.3f, %s\n", ratio[3], ellipseValue, result)
+    end
+    
+    Clipboard.setClipboard(debugInfo)
+end
+
 function AdminRadZone.getBoundStr(pl)
     pl = pl or getPlayer()
     if not pl then return "" end
@@ -163,28 +207,55 @@ function AdminRadZone.getBoundStr(pl)
     
     local sqX = sq:getX()
     local sqY = sq:getY()
+    local dx = sqX - centerX
+    local dy = sqY - centerY
     
-    local radiusX = rad
-    local radiusY = rad * 0.5 
+    pl = pl or getPlayer()
+    if not pl then return "" end
+    if not AdminRadZoneData or not AdminRadZoneData.state then return "" end
+    if not AdminRadZoneData.run then return "" end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return "" end
+    
+    local centerX, centerY, rad = AdminRadZoneData.x, AdminRadZoneData.y, AdminRadZoneData.rad
+    local sq = pl:getCurrentSquare()
+    if not sq or not centerX or not centerY or not rad then return "" end
+    
+    local sqX = sq:getX()
+    local sqY = sq:getY()
     
     local dx = sqX - centerX
     local dy = sqY - centerY
     
-    local ellipseValue = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY)
+    local ratios = {
+        {1.0, 1.0, "Circle"},
+        {1.0, 0.5, "Wide 2:1"},
+        {0.5, 1.0, "Tall 1:2"},
+        {1.0, 0.75, "Wide 4:3"},
+        {0.75, 1.0, "Tall 3:4"}
+    }
+
     
---[[     local debugInfo = string.format(
-        "Player Square: %d, %d\nZone Center: %.2f, %.2f\nZone Radius: %.2f\nRadiusX: %.2f, RadiusY: %.2f\nDX: %.2f, DY: %.2f\nEllipse Value: %.3f\n",
-        sqX, sqY, centerX, centerY, rad, radiusX, radiusY, dx, dy, ellipseValue
-    ) ]]
+    for i, ratio in ipairs(ratios) do
+        local radiusX = rad * ratio[1]
+        local radiusY = rad * ratio[2]
+        local ellipseValue = (dx * dx) / (radiusX * radiusX) + (dy * dy) / (radiusY * radiusY)
+        local inBound = ellipseValue <= 1
+        local result = inBound and "InBound" or "OutOfBound"
+        
+       -- debugInfo = debugInfo .. string.format("%s: Value=%.3f, %s\n", ratio[3], ellipseValue, result)
+    end
     
-    local inBound = ellipseValue <= 1
-    local result = inBound and "InBound" or "OutOfBound"
-    
-   -- debugInfo = debugInfo .. "Result: " .. result
-    
-    --Clipboard.setClipboard(debugInfo)
-    
-    return result
+
+
+    local distance = math.sqrt(dx * dx + dy * dy)
+    local inBound = distance <= rad
+    return inBound and "InBound" or "OutOfBound"
+end
+
+function AdminRadZone.isOutOfBound(pl)
+    local str = AdminRadZone.getBoundStr(pl)
+    if str == "" then return false end
+    return str == "OutOfBound"
 end
 
 function AdminRadZone.isOutOfBound(pl)
@@ -193,6 +264,7 @@ function AdminRadZone.isOutOfBound(pl)
     return str == "OutOfBound"
 end
 -----------------------            ---------------------------
+--[[ 
 function AdminRadZone.RadiationDamage(pl, RadDamage)
 
     pl = pl or getPlayer()
@@ -246,7 +318,7 @@ function AdminRadZone.RadiationDamage(pl, RadDamage)
     end
 end
 
-
+ ]]
 
 -----------------------            ---------------------------
 
