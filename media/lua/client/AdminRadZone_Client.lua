@@ -3,8 +3,31 @@ if not isClient() then return end
 
 AdminRadZone = AdminRadZone or {}
 
------------------------ ---------------------------
+-----------------------            ---------------------------
+AdminRadZone.showStates = {
+    ["active"] = true,
+    ["pause"] = true,
+    ["cooldown"] = true,
+    ["inactive"] = false,
 
+}
+AdminRadZone.swapImg = {
+    ["AdminRadZone_Img2"] = "AdminRadZone_Img1",
+    ["AdminRadZone_Img1"] = "AdminRadZone_Img2",
+}
+
+
+AdminRadZone.stateColors = {
+    ["inactive"] = ColorInfo.new(0.5, 0.5, 0.5, 1), -- gray
+    ["active"] = ColorInfo.new(0, 1, 0, 1),          -- green
+    ["cooldown"] = ColorInfo.new(1, 1, 0, 1),        -- yellow
+    ["pause"] = ColorInfo.new(1, 0.5, 0, 1)          -- orange
+}
+
+
+----------------------- ---------------------------
+local test = ColorInfo.new(0.5, 0.5, 0.5, 1)
+print(test:getA())
 function AdminRadZone.formatTime(seconds)
     if not seconds or seconds < 0 then return "00:00" end
     local minutes = math.floor(seconds / 60)
@@ -122,54 +145,11 @@ function AdminRadZone.isIncomplete()
     return not AdminRadZoneData or AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1
 end
 
-function AdminRadZone.getMarkerColor(alpha, pick)
-    alpha = alpha or 1
-    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.MarkerColor) or 3
-    
-    local colors = {
-        ColorInfo.new(0.5, 0.5, 0.5, alpha),  -- gray
-        ColorInfo.new(1, 0, 0, alpha),        -- red
-        ColorInfo.new(1, 0.5, 0, alpha),      -- orange
-        ColorInfo.new(1, 1, 0, alpha),        -- yellow
-        ColorInfo.new(0, 1, 0, alpha),        -- green
-        ColorInfo.new(0, 0, 1, alpha),        -- blue
-        ColorInfo.new(0.5, 0, 0.5, alpha),    -- purple
-        ColorInfo.new(0, 0, 0, alpha),        -- black
-        ColorInfo.new(1, 1, 1, alpha),        -- white
-        ColorInfo.new(1, 0.75, 0.8, alpha),   -- pink
-    }
-    
-    return colors[pick] or colors[3]
-end
-
-
-AdminRadZone.stateColors = {
-    ["inactive"] = ColorInfo.new(0.5, 0.5, 0.5, 1), -- gray
-    ["active"] = ColorInfo.new(0, 1, 0, 1),          -- green
-    ["cooldown"] = ColorInfo.new(1, 1, 0, 1),        -- yellow
-    ["pause"] = ColorInfo.new(1, 0.5, 0, 1)          -- orange
-}
 
 
 function AdminRadZone.isPanelInit()
     return AdminRadZonePanel and  AdminRadZonePanel.instance and AdminRadZonePanel.instance:getIsVisible()
 end
---[[ 
-function AdminRadZone.updateColorProperties()
-    local col
-    if AdminRadZone.isPanelInit() and AdminRadZoneData and AdminRadZoneData.state then
-        col = AdminRadZone.stateColors[AdminRadZoneData.state]
-    else
-        col = AdminRadZone.getMarkerColor()
-    end
-    
-    if AdminRadZone.marker:getR() ~= col.r then AdminRadZone.marker:setR(col.r) end
-    if AdminRadZone.marker:getG() ~= col.g then AdminRadZone.marker:setG(col.g) end
-    if AdminRadZone.marker:getB() ~= col.b then AdminRadZone.marker:setB(col.b) end
-    return col
-end
- ]]
-
 -----------------------            ---------------------------
 
 
@@ -214,13 +194,6 @@ function AdminRadZone.core(module, command, args)
 
         local x,y,z = pl:getX(), pl:getY(), pl:getZ()
         if x and y and z then
-        --[[      
-            local lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, 0, 255, 0, 255))
-            AdminRadZone.halt(3, function()
-                pl:getCell():removeLamppost(x,y,z)
-            end) 
-        ]]
-            
             AdminRadZone.doLamp(x, y, z)
         end
 
@@ -252,116 +225,7 @@ function AdminRadZone.getTotalTime()
 
     return activeTime + cooldownTime
 end
---[[ 
-function AdminRadZone.getRemainingTime()
-    if not AdminRadZoneData then return 0 end
-  
-    local roundDuration = SandboxVars.AdminRadZone.RoundDuration or 60
-    local cooldown = SandboxVars.AdminRadZone.Cooldown or 60
-    local rounds = AdminRadZoneData.rounds or 0
-    local duration = AdminRadZoneData.duration or 0
-    local remainingTime = 0
-    
-    if AdminRadZoneData.state == "active" then
-        remainingTime = (roundDuration - duration)
-        if rounds > 1 then
-            remainingTime = remainingTime + ((rounds - 1) * roundDuration)
-            remainingTime = remainingTime + ((rounds - 1) * cooldown)
-        end
-    elseif AdminRadZoneData.state == "cooldown" then
-        remainingTime = AdminRadZoneData.cooldown or 0
-        if rounds > 0 then
-            remainingTime = remainingTime + (rounds * roundDuration)
-            if rounds > 1 then
-                remainingTime = remainingTime + ((rounds - 1) * cooldown)
-            end
-        end
-    elseif AdminRadZoneData.state == "pause" then
-        return math.max(0, remainingTime) or "PAUSED"
-    end
 
-    return math.max(0, remainingTime)
-end ]]
------------------------            ---------------------------
-AdminRadZone.showStates = {
-    ["active"] = true,
-    ["pause"] = true,
-    ["cooldown"] = true,
-}
-AdminRadZone.swapImg = {
-    ["AdminRadZone_Img2"] = "AdminRadZone_Img1",
-    ["AdminRadZone_Img1"] = "AdminRadZone_Img2",
-}
 
 -----------------------            ---------------------------
 
-AdminRadZone.a = 255
-function AdminRadZone.fader(x, y, z, r, g, b)
-    local pl = getPlayer() 
-    AdminRadZone.a = 255
-    local function ticker(t)
-        t=t+1
-
-        if t % 8 == 0 then 
-            AdminRadZone.a = AdminRadZone.a - 1
-            if AdminRadZone.lamp then
-                pl:getCell():removeLamppost(x,y,z)
-            end
-
-            if AdminRadZone.a <= 0 then        
-                AdminRadZone.a = 255
-                Events.OnTick.Remove(ticker)
-            else
-                AdminRadZone.a = AdminRadZone.a - 1
-                AdminRadZone.lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, r, g, b, AdminRadZone.a))
-            end
-        end
-    end
-    Events.OnTick.Add(ticker)
-end
-
-function AdminRadZone.doLamp(x, y, z)        
-    if AdminRadZone.a == 255 then
-        local col = AdminRadZone.getRadColor()
-        AdminRadZone.fader(x, y, z, col.r*255, col.g*255, col.b*255)
-    end
-end
---[[ 
-
-local pl = getPlayer()
-local x, y, z = round(pl:getX()),  round(pl:getY()),  pl:getZ() or 0
-
- AdminRadZone.doLamp(x, y, z)    
- ]]
---[[ 
-
-
-AdminRadZone.a = 255
-function AdminRadZone.fader(x, y, z, r, g, b)
-    local pl = getPlayer() 
-    AdminRadZone.a = 255
-    local function ticker(t)
-        t=t+1
-        AdminRadZone.a = AdminRadZone.a - 1
-        if AdminRadZone.lamp then
-            pl:getCell():removeLamppost(x,y,z)
-        end
-        if t % 4 == 0 then 
-            if AdminRadZone.a <= 0 then        
-                AdminRadZone.a = 255
-                Events.OnTick.Remove(ticker)
-            else
-                AdminRadZone.lamp = pl:getCell():addLamppost(IsoLightSource.new(x, y, z, r, g, b, AdminRadZone.a))
-            end
-        end
-    end
-    Events.OnTick.Add(ticker)
-end
-
-function AdminRadZone.doLamp(x, y, z)   
-  
-    if AdminRadZone.a == 255 then
-        local col = AdminRadZone.getRadColor()
-        AdminRadZone.fader(x, y, z, col.r*255, col.g*255, col.b*255)
-    end
-end ]]

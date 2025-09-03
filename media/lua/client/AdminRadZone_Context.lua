@@ -20,7 +20,7 @@ function AdminRadZone.context(player, context, worldobjects, test)
 		return
     end
 	local x, y = round(pl:getX()), round(pl:getY())
-
+	
 	if not x or not y then return end
 	if getCore():getDebug() or	sq:DistTo(x, y) <= 3 or sq == pl:getCurrentSquare() then
         local tip = ISWorldObjectContextMenu.addToolTip()

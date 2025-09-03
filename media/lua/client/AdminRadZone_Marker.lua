@@ -1,6 +1,25 @@
 --client\AdminRadZone_Marker.lua
 AdminRadZone = AdminRadZone or {}
 
+function AdminRadZone.getMarkerColor(alpha, pick)
+    alpha = alpha or 1
+    pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.MarkerColor) or 3
+    
+    local colors = {
+        ColorInfo.new(0.5, 0.5, 0.5, alpha),  -- gray
+        ColorInfo.new(1, 0, 0, alpha),        -- red
+        ColorInfo.new(1, 0.5, 0, alpha),      -- orange
+        ColorInfo.new(1, 1, 0, alpha),        -- yellow
+        ColorInfo.new(0, 1, 0, alpha),        -- green
+        ColorInfo.new(0, 0, 1, alpha),        -- blue
+        ColorInfo.new(0.5, 0, 0.5, alpha),    -- purple
+        ColorInfo.new(0, 0, 0, alpha),        -- black
+        ColorInfo.new(1, 1, 1, alpha),        -- white
+        ColorInfo.new(1, 0.75, 0.8, alpha),   -- pink
+    }
+    
+    return colors[pick] or colors[3]
+end
 
 function AdminRadZone.getColorProperties()
     local col
@@ -36,15 +55,15 @@ function AdminRadZone.updateClientMarker(pl)
             AdminRadZone.marker = nil
         end
 
-        AdminRadZone.markerChoice = AdminRadZone.markerChoice or AdminRadZone.swapImg[AdminRadZone.shouldPick]
         AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
             AdminRadZone.markerChoice,
             AdminRadZone.markerChoice,
             sq,
-            col.r, col.g, col.b,
+            col:getR(), col:getG(), col:getB(),
             true,
             data.rad
         )
+
     end
 
     if AdminRadZone.isShouldShowMarker() or AdminRadZone.forceSwap then
@@ -54,9 +73,9 @@ function AdminRadZone.updateClientMarker(pl)
         if AdminRadZone.marker then
             col = AdminRadZone.getColorProperties()
             AdminRadZone.marker:setPosAndSize(data.x, data.y, pl:getZ(), data.rad)
-            AdminRadZone.marker:setR(col.r)
-            AdminRadZone.marker:setG(col.g)
-            AdminRadZone.marker:setB(col.b)
+            AdminRadZone.marker:setR(col:getR())
+            AdminRadZone.marker:setG(col:getG())
+            AdminRadZone.marker:setB(col:getB())
         end
     elseif AdminRadZone.marker then
         AdminRadZone.marker:remove()

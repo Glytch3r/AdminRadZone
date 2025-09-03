@@ -32,7 +32,7 @@ function AdminRadZone.getRadColor(pick)
         ColorInfo.new(1, 0.75, 0.8),   -- pink
     }
     
-    return colors[pick] or colors[3]
+    return colors[pick] or colors[3] 
 end
 
 function AdminRadZone.removeSickMarker()
@@ -60,8 +60,10 @@ function AdminRadZone.RadiationMarker(pl)
                 local img  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
                 local overlay  = "AdminRadZone_Img"..tostring(ZombRand(2,5))
                 local rad = ZombRand(1, 101) / 100
-                local col = AdminRadZone.getRadColor() or getCore():getMpTextColor()--AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
-                AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(img, overlay, sq, col.r or 0, col.g or 1, col.b or 0, true, rad)
+
+                local col = AdminRadZone.getRadColor() or getCore():getMpTextColor()
+                --AdminRadZone.getRadColor(SandboxVars.AdminRadZone.RadColor)
+                AdminRadZone.SickMarker = getWorldMarkers():addGridSquareMarker(tostring(img), tostring(overlay), sq,  col:getR(), col:getG(), col:getB(), true, rad)
             end
         end
         if AdminRadZone.SickMarker then       
@@ -161,6 +163,7 @@ function AdminRadZone.RadiationDamage(pl, RadDamage)
 
     pl = pl or getPlayer()
     if not pl then return end 
+    if AdminRadZone.isNormal() then return end
 
     local bd = pl:getBodyDamage()
     if not bd then return end
@@ -183,12 +186,11 @@ function AdminRadZone.RadiationDamage(pl, RadDamage)
         bd:setFoodSicknessLevel(math.min(100, sickness + RadDamage))
     end
     -----------------------            ---------------------------
-    if AdminRadZone.isNormal() then return end
     if AdminRadZone.isOutOfBound() then
         local fx1 = SandboxVars.AdminRadZone.FloorVisualChance or 10
         if fx1 > 0 then
             if AdminRadZone.doRoll(fx1) then
-                AdminRadZone.doRadSpr(pl)
+                AdminRadZone.doRadSpr()
             end
             AdminRadZone.playSfx(pl)
         end
@@ -231,7 +233,7 @@ function AdminRadZone.doRadSpr()
 
     local col = AdminRadZone.getRadColor(5)
     if col and AdminRadZone.obj then
-        AdminRadZone.obj:setHighlightColor(col.r*255, col.g*255, col.b*255, 1)
+        AdminRadZone.obj:setHighlightColor(col:getR()*255, col:getG()*255, col:getB()*255, 1)
         AdminRadZone.obj:setHighlighted(true, true)
         AdminRadZone.obj:setBlink(true)
     end

@@ -1,6 +1,8 @@
 require "ISUI/ISPanel"
 AdminRadZone = AdminRadZone or {}
 AdminRadZonePanel = ISPanel:derive("AdminRadZonePanel")
+
+
 function AdminRadZonePanel:new(x, y, width, height)
     local o = ISPanel:new(x, y, width, height)
     setmetatable(o, self)
@@ -9,6 +11,14 @@ function AdminRadZonePanel:new(x, y, width, height)
     o.moveWithMouse = true
     return o
 end
+
+AdminRadZone.panelColors = {
+    ["pause"] = { r = 0.99, g = 0.49, b = 0.00, a=0.8},      
+    ["cooldown"] = {r = 0.09, g = 0.52, b = 0.82, a=0.8},    
+    ["inactive"] = {r = 0.52, g = 0.52, b = 0.62, a=0.8},    
+    ["active"] = { r = 0.46, g = 0.84, b = 0.49, a=0.8},        
+}
+
 function AdminRadZone.doTransmit(data)
     sendClientCommand("AdminRadZone", "Sync", {data = data or AdminRadZoneData})
 end
@@ -289,12 +299,7 @@ function AdminRadZonePanel:render()
     ISPanel.render(self)
 end
 
-AdminRadZone.panelColors = {
-    ["pause"] = { r = 0.99, g = 0.49, b = 0.00, a=0.8},      
-    ["cooldown"] = {r = 0.09, g = 0.52, b = 0.82, a=0.8},    
-    ["inactive"] = {r = 0.52, g = 0.52, b = 0.62, a=0.8},    
-    ["active"] = { r = 0.46, g = 0.84, b = 0.49, a=0.8},        
-}
+
 -----------------------            ---------------------------
 function AdminRadZonePanel.ClosePanel()
     if AdminRadZonePanel.instance then

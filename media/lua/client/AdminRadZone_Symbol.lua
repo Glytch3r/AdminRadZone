@@ -112,6 +112,7 @@ function AdminRadZone.hookInit()
     function ISMiniMapOuter:render()
         AdminRadZone.Hook_ISMiniMapOuterRender(self)
         local data = AdminRadZoneData
+
         if data and data.state and data.x and data.y and data.rad and data.run then
             AdminRadZone.renderSym(self.inner.mapAPI, data.x, data.y, data.rad, 1, 0, 0, 1, self.inner, nil, nil, nil, 3)
         end
@@ -131,6 +132,7 @@ function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, draw
     end
 
     local screenRadius = math.abs(mapAPI:worldToUIX(posX + radius, posY) - screenCenterX)
+    local isShow = SandboxVars.AdminRadZone.MapSymbols
 
     for deg = 0, math.pi * 2, shrink do
         local xScreen1 = screenCenterX + screenRadius * math.cos(deg)
@@ -142,9 +144,9 @@ function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, draw
         if mask then
             hide, xScreen1, yScreen1, xScreen2, yScreen2 = AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
         end
-
-        if not hide and drawTarget then
+        if not hide and drawTarget and isShow then
             local halfThickness = thickness / 2
+        
             drawTarget:drawRect(xScreen1 - halfThickness, yScreen1 - halfThickness, thickness, thickness, alpha, r, g, b)
             drawTarget:drawRect(xScreen2 - halfThickness, yScreen2 - halfThickness, thickness, thickness, alpha, r, g, b)
         end

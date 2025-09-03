@@ -32,7 +32,7 @@ function AdminRadZoneIndicator:render()
         local color = {r=1, g=1, b=1, a=1}
         if AdminRadZoneData.state and AdminRadZone.stateColors[AdminRadZoneData.state] then
             local stateColor = AdminRadZone.stateColors[AdminRadZoneData.state]
-            color = {r=stateColor.r, g=stateColor.g, b=stateColor.b, a=stateColor.a}
+            color = {r=stateColor:getR(), g=stateColor:getG(), b=stateColor:getB(), a=1}
         end
         self:drawTexture(self.texture, 0, 0, color.a, color.r, color.g, color.b)
     end
