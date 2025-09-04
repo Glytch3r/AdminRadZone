@@ -167,7 +167,7 @@ function AdminRadZonePanel:initialise()
     self:addChild(self.coordLabel)
     y = y + 18
     
-    self.teleportBtn = ISButton:new(margin, y, buttonWidth, buttonHeight, "Teleport", self, AdminRadZonePanel.onTeleport)
+    self.teleportBtn = ISButton:new(margin, y, buttonWidth, buttonHeight, "Teleport", self, function()  self:onTeleport() end)
     self.teleportBtn.borderColor = {r = 0.41, g = 0.80, b = 1.0, a = 1}
     self.teleportBtn:initialise()
     self.teleportBtn:instantiate()
@@ -249,7 +249,8 @@ function AdminRadZonePanel:onRoundsChange()
     self.didChange = true
 end
 function AdminRadZonePanel.onExit()
-    AdminRadZonePanel.ClosePanel()    
+    AdminRadZonePanel.ClosePanel()   
+    
 end
 
 function AdminRadZonePanel:onRun()
@@ -300,12 +301,13 @@ function AdminRadZonePanel.onPausePlay()
 
     --AdminRadZone.doTransmit(AdminRadZoneData)
 end
-function AdminRadZonePanel.onTeleport()
+function AdminRadZonePanel:onTeleport()
     getSoundManager():playUISound("UIActivateButton")
-    local running = AdminRadZone.isShouldShowMarker()
-    local data = running and AdminRadZoneData 
+   -- local running = AdminRadZone.isShouldShowMarker()
     
-    if data.x and data.y and data.x ~= -1 and data.y ~= -1 then
+    local data = AdminRadZoneData 
+    if data.x ~= nil and data.y ~= nil  then
+        if data.x == -1 or data.y == -1 then return end
         local pl = getPlayer()
         if pl then
             pl:setX(data.x)
@@ -338,6 +340,7 @@ function AdminRadZonePanel.ClosePanel()
     if AdminRadZone.marker then
         AdminRadZone.marker:remove()
         AdminRadZone.marker = nil
+        AdminRadZone.forceSwap  = true
     end
 end
 function AdminRadZonePanel.OpenPanel()
@@ -382,7 +385,8 @@ function AdminRadZonePanel:update()
     local px, py = round(pl:getX()), round(pl:getY())
     self.playerCoordLabel.name = "Player:\n" .. px .. "  x  " .. py
     local durationTime = AdminRadZoneData.duration or 0
-    local totalTime = AdminRadZone.getTotalTime() --AdminRadZoneData.totalTime or ( ( (AdminRadZoneData.rounds or 1) * durationTime) + ((AdminRadZoneData.rounds or 1) - 1) * AdminRadZoneData.cooldown )
+    local totalTime = AdminRadZone.getTotalTime() 
+    --AdminRadZoneData.totalTime or ( ( (AdminRadZoneData.rounds or 1) * durationTime) + ((AdminRadZoneData.rounds or 1) - 1) * AdminRadZoneData.cooldown )
     -----------------------            ---------------------------
 
     -----------------------            ---------------------------
@@ -438,9 +442,11 @@ function AdminRadZonePanel:update()
     if AdminRadZoneData.x == -1 and AdminRadZoneData.y == -1 then
         self.markerCoordLabel:setColor(1, 0, 0)        
         self.timerLabel:setColor(1, 0, 0)      
+        self.teleportBtn.enable = false
     else
         self.markerCoordLabel:setColor(1,1,1)
         self.timerLabel:setColor(1,1,1)
+        self.teleportBtn.enable = true
     end
 
 

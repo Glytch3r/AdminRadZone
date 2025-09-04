@@ -46,14 +46,37 @@ function AdminRadZone.getColorProperties()
     local col
     if AdminRadZone.isPanelInit() then
         col = getCore():getMpTextColor()
-        AdminRadZone.shouldPick = "AdminRadZone_Img1"
+        AdminRadZone.shouldPick = "AdminRadZone_Img2"
+
     else
         col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-        AdminRadZone.shouldPick = "AdminRadZone_Img2"
+        AdminRadZone.shouldPick = "AdminRadZone_Img1"
+
     end
     return col
 end
 
+-----------------------            ---------------------------
+function AdminRadZone.isShouldShowMarker()
+    if not AdminRadZoneData then return false end
+    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return false end
+    
+    if AdminRadZone.isPanelInit() then 
+       -- AdminRadZone.markerChoice = "AdminRadZone_Img1"
+        return true 
+    else
+       -- AdminRadZone.markerChoice = "AdminRadZone_Img2"
+        
+        return true 
+
+    end
+    if AdminRadZoneData  then
+        return AdminRadZone.showStates[AdminRadZoneData.state] == true 
+    end
+    return false
+end
+-----------------------            ---------------------------
+--[[ 
 function AdminRadZone.updateClientMarker(pl)
     local data = AdminRadZoneData
     if not data or not data.state or not data.rad then return end
@@ -102,25 +125,75 @@ function AdminRadZone.updateClientMarker(pl)
         AdminRadZone.marker:remove()
         AdminRadZone.marker = nil
     end
+end ]]
+-----------------------            ---------------------------
+
+-----------------------            ---------------------------
+
+
+--[[ 
+function AdminRadZone.updateClientMarker(pl)
+    pl = pl or getPlayer()
+    local data = AdminRadZoneData
+    if not data or not data.state or not data.rad then return end
+    if data.x == -1 or data.y == -1 then return end
+
+    local centerX = data.x + 0.5 
+    local centerY = data.y + 0.5
+    local z = (pl and pl:getZ()) or 0
+
+    local sq = getCell():getOrCreateGridSquare(math.floor(centerX), math.floor(centerY), math.floor(z))
+    if not sq then return end
+
+    local radiusX = data.rad
+    local radiusY = data.rad * 0.5 
+    local col = AdminRadZone.getColorProperties()
+
+    function AdminRadZone.spawnMarker()
+        col = AdminRadZone.getColorProperties()
+        if AdminRadZone.forceSwap and AdminRadZone.swapImg then
+            AdminRadZone.shouldPick = AdminRadZone.swapImg[AdminRadZone.shouldPick] or AdminRadZone.shouldPick
+            AdminRadZone.forceSwap = nil
+        end
+
+        if AdminRadZone.marker then
+            AdminRadZone.marker:remove()
+            AdminRadZone.marker = nil
+        end
+
+        AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
+            AdminRadZone.shouldPick,
+            AdminRadZone.shouldPick,
+            sq,
+            col:getR(), col:getG(), col:getB(),
+            true,
+            radiusX
+        )
+
+        if AdminRadZone.marker then
+            AdminRadZone.marker:setScaleCircleTexture(false)
+            AdminRadZone.marker:setPosAndSize(centerX, centerY, z, radiusX)
+        end
+    end
+
+    if AdminRadZone.isShouldShowMarker() or AdminRadZone.forceSwap then
+        if not AdminRadZone.marker or AdminRadZone.forceSwap then
+            AdminRadZone.spawnMarker()
+        end
+        if AdminRadZone.marker then
+            col = AdminRadZone.getColorProperties()
+            AdminRadZone.marker:setPosAndSize(centerX, centerY, z, radiusX)
+            AdminRadZone.marker:setR(col:getR())
+            AdminRadZone.marker:setG(col:getG())
+            AdminRadZone.marker:setB(col:getB())
+        end
+    elseif AdminRadZone.marker then
+        AdminRadZone.marker:remove()
+        AdminRadZone.marker = nil
+    end
 end
 
 Events.OnPlayerUpdate.Add(AdminRadZone.updateClientMarker)
+ ]]
+-----------------------            --------------------------- 
 
-
-function AdminRadZone.isShouldShowMarker()
-    if not AdminRadZoneData then return false end
-    if AdminRadZoneData.x == -1 or AdminRadZoneData.y == -1 then return false end
-    
-    if AdminRadZone.isPanelInit() then 
-        AdminRadZone.markerChoice = "AdminRadZone_Img2"
-        return true 
-    else
-        AdminRadZone.markerChoice = "AdminRadZone_Img1"
-        return true 
-
-    end
-    if AdminRadZoneData  then
-        return AdminRadZone.showStates[AdminRadZoneData.state] == true 
-    end
-    return false
-end
