@@ -214,15 +214,6 @@ function AdminRadZone.core(module, command, args)
             pl:getEmitter():playSound("AdminRadZone_Warning")         
         end
 
-        local x,y,z = pl:getX(), pl:getY(), pl:getZ()
-        if x and y and z then
-           if AdminRadZone.lamp then 
-                getCell():removeLamppost(AdminRadZone.lamp) 
-            end
-            local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
-            local r, g, b = col:getR()*255,  col:getG()*255, col:getB()*255                
-            AdminRadZone.lamp =  getCell():addLamppost(IsoLightSource.new(x,y,z, r, g, b, 255))
-        end
         AdminRadZone.halt(7.5, function()
             if SandboxVars.AdminRadZone.ShrinkAlertMessage then
                 pl:startMuzzleFlash()
@@ -236,7 +227,7 @@ function AdminRadZone.core(module, command, args)
         if SandboxVars.AdminRadZone.ShrinkAlertAudio then
             pl:getEmitter():playSound("AdminRadZone_Warning")         
         end
-        local x, y, z =   AdminRadZoneData.x ,   AdminRadZoneData.y , pl:getZ()
+--[[         local x, y, z =   AdminRadZoneData.x ,   AdminRadZoneData.y , pl:getZ()
         if x and y and z then
            if AdminRadZone.lamp then 
                 getCell():removeLamppost(AdminRadZone.lamp) 
@@ -244,7 +235,7 @@ function AdminRadZone.core(module, command, args)
             local col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)
             local r, g, b = col:getR()*255,  col:getG()*255, col:getB()*255                
             AdminRadZone.lamp =  getCell():addLamppost(IsoLightSource.new(x,y,z, r, g, b, 255))
-        end
+        end ]]
 
         AdminRadZone.halt(7.5, function()
             if SandboxVars.AdminRadZone.ShrinkAlertMessage then
