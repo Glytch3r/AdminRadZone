@@ -47,8 +47,7 @@ AdminRadZone.stateColors = {
 
 
 ----------------------- ---------------------------
-local test = ColorInfo.new(0.5, 0.5, 0.5, 1)
-print(test:getA())
+
 function AdminRadZone.formatTime(seconds)
     if not seconds or seconds < 0 then return "00:00" end
     local minutes = math.floor(seconds / 60)
