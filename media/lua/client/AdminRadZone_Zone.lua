@@ -27,21 +27,37 @@ function AdminRadZone.getDistance(pl)
     local inBound = distance <= data.rad
     return distance, inBound
 end
+--[[ 
+function AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
+    if not mask then return false, xScreen1, yScreen1, xScreen2, yScreen2 end
 
+    if (xScreen1 < mask.x1 or xScreen1 > mask.x2 or
+        yScreen1 < mask.y1 or yScreen1 > mask.y2 or
+        xScreen2 < mask.x1 or xScreen2 > mask.x2 or
+        yScreen2 < mask.y1 or yScreen2 > mask.y2) then
+        return true, xScreen1, yScreen1, xScreen2, yScreen2
+    end
+
+    return false, xScreen1, yScreen1, xScreen2, yScreen2
+end ]]
+
+function AdminRadZone.mask(x, y, mask)
+    if not mask then return false, x, y end
+    if x < mask.x1 or x > mask.x2 or y < mask.y1 or y > mask.y2 then
+        return true, x, y
+    end
+    return false, x, y
+end
 
 function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, drawTarget, uiXOffset, uiYOffset, mask, thickness)
     thickness = thickness or 2
     local screenCenterX = mapAPI:worldToUIX(posX, posY)
     local screenCenterY = mapAPI:worldToUIY(posX, posY)
 
-
-
-
     if uiXOffset then
         screenCenterX = screenCenterX + uiXOffset
         screenCenterY = screenCenterY + uiYOffset
     end
-
 
     local screenEdgeX = mapAPI:worldToUIX(posX + radius, posY)
     local screenEdgeY = mapAPI:worldToUIY(posX, posY + radius)
@@ -50,27 +66,24 @@ function AdminRadZone.renderSym(mapAPI, posX, posY, radius, r, g, b, alpha, draw
     local screenRadiusY = math.abs(screenEdgeY - screenCenterY)
 
     local circumference = 2 * math.pi * math.max(screenRadiusX, screenRadiusY)
-    local dotSpacing = 6
+    local dotSpacing = SandboxVars.AdminRadZone.MapDots or 6
     local numDots = math.max(36, math.floor(circumference / dotSpacing))
     local step = (math.pi * 2) / numDots
     local isShow = SandboxVars.AdminRadZone.MapSymbols
     local mapVisible = drawTarget and drawTarget:getIsVisible()
 
     for deg = 0, math.pi * 2, step do
-        local xScreen1 = screenCenterX + screenRadiusX * math.cos(deg)
-        local yScreen1 = screenCenterY + screenRadiusY * math.sin(deg)
-        local xScreen2 = screenCenterX + screenRadiusX * math.cos(deg + step)
-        local yScreen2 = screenCenterY + screenRadiusY * math.sin(deg + step)
+        local xScreen = screenCenterX + screenRadiusX * math.cos(deg)
+        local yScreen = screenCenterY + screenRadiusY * math.sin(deg)
 
         local hide = false
         if mask then
-            hide, xScreen1, yScreen1, xScreen2, yScreen2 = AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
+            hide, xScreen, yScreen = AdminRadZone.mask(xScreen, yScreen, mask)
         end
 
         if not hide and drawTarget and isShow and mapVisible then
             local halfThickness = thickness / 2
-            drawTarget:drawRect(xScreen1 - halfThickness, yScreen1 - halfThickness, thickness, thickness, alpha, r, g, b)
-            drawTarget:drawRect(xScreen2 - halfThickness, yScreen2 - halfThickness, thickness, thickness, alpha, r, g, b)
+            drawTarget:drawRect(xScreen - halfThickness, yScreen - halfThickness, thickness, thickness, alpha, r, g, b)
         end
     end
 end
@@ -105,7 +118,7 @@ function AdminRadZone.updateClientMarker(pl)
                 end
                 AdminRadZone.marker = getWorldMarkers():addGridSquareMarker(
                     AdminRadZone.shouldPick,
-                    nil,
+                    AdminRadZone.shouldPick,
                     sq,
                     col:getR(), col:getG(), col:getB(),
                     true,
@@ -137,31 +150,6 @@ function AdminRadZone.getImageRad(rad)
     rad = rad  or AdminRadZoneData.rad
     return rad / AdminRadZone.imageOffset
 end
-
-function AdminRadZone.mask(xScreen1, yScreen1, xScreen2, yScreen2, mask)
-    if not mask then return false, xScreen1, yScreen1, xScreen2, yScreen2 end
-
-    local hide = false
-    if (xScreen1 < mask.x1 and xScreen2 < mask.x1) or
-       (xScreen1 > mask.x2 and xScreen2 > mask.x2) or
-       (yScreen1 < mask.y1 and yScreen2 < mask.y1) or
-       (yScreen1 > mask.y2 and yScreen2 > mask.y2) then
-        hide = true
-        return hide, xScreen1, yScreen1, xScreen2, yScreen2
-    end
-
-    if xScreen1 < mask.x1 then xScreen1 = mask.x1 end
-    if xScreen1 > mask.x2 then xScreen1 = mask.x2 end
-    if yScreen1 < mask.y1 then yScreen1 = mask.y1 end
-    if yScreen1 > mask.y2 then yScreen1 = mask.y2 end
-    if xScreen2 < mask.x1 then xScreen2 = mask.x1 end
-    if xScreen2 > mask.x2 then xScreen2 = mask.x2 end
-    if yScreen2 < mask.y1 then yScreen2 = mask.y1 end
-    if yScreen2 > mask.y2 then yScreen2 = mask.y2 end
-
-    return hide, xScreen1, yScreen1, xScreen2, yScreen2
-end
-
 
 -----------------------            ---------------------------
 function AdminRadZone.debugBoundStr(pl)

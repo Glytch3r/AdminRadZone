@@ -46,7 +46,7 @@ function AdminRadZone.getColorProperties()
     local col
     if AdminRadZone.isPanelInit() then
         col = getCore():getMpTextColor()
-        AdminRadZone.shouldPick = "AdminRadZone_Img2"
+        AdminRadZone.shouldPick = "AdminRadZone_Img2" 
 
     else
         col = AdminRadZone.getMarkerColor(1, SandboxVars.AdminRadZone.MarkerColor)

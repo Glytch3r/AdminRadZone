@@ -39,18 +39,17 @@ end
 
 function AdminRadZone.getRadColor(pick)
     pick = pick or (SandboxVars and SandboxVars.AdminRadZone and SandboxVars.AdminRadZone.RadColor) or 3
-    
     local colors = {
-        ColorInfo.new(0.5, 0.5, 0.5),  -- gray
-        ColorInfo.new(1, 0, 0),        -- red
-        ColorInfo.new(1, 0.5, 0),      -- orange
-        ColorInfo.new(1, 1, 0),        -- yellow
-        ColorInfo.new(0, 1, 0),        -- green
-        ColorInfo.new(0, 0, 1),        -- blue
-        ColorInfo.new(0.5, 0, 0.5),    -- purple
-        ColorInfo.new(0, 0, 0),        -- black
-        ColorInfo.new(1, 1, 1),        -- white
-        ColorInfo.new(1, 0.75, 0.8),   -- pink
+        ColorInfo.new(0.5, 0.5, 0.5,1),  -- gray
+        ColorInfo.new(1, 0, 0,1),        -- red
+        ColorInfo.new(1, 0.5, 0,1),      -- orange
+        ColorInfo.new(1, 1, 0,1),        -- yellow
+        ColorInfo.new(0, 1, 0,1),        -- green
+        ColorInfo.new(0, 0, 1,1),        -- blue
+        ColorInfo.new(0.5, 0, 0.5,1),    -- purple
+        ColorInfo.new(0, 0, 0,1),        -- black
+        ColorInfo.new(1, 1, 1,1),        -- white
+        ColorInfo.new(1, 0.75, 0.8,1),   -- pink
     }
     
     return colors[pick] or colors[3] 
@@ -72,7 +71,6 @@ function AdminRadZone.RadiationMarker(pl)
         AdminRadZone.removeSickMarker()
         return
     end
-
 
     if AdminRadZone.isOutOfBound(pl) then
         if not AdminRadZone.SickMarker then
@@ -152,6 +150,7 @@ function AdminRadZone.isNormal()
 end
 
 function AdminRadZone.isOutOfBound(pl)
+    pl = pl or getPlayer()
     local str = AdminRadZone.getBoundStr(pl)
     if str == "" then return false end
     return str == "OutOfBound"
@@ -231,7 +230,7 @@ function AdminRadZone.doRadSpr()
     AdminRadZone.obj = IsoObject.new(getCell(), sq, sprName, false, {})
     sq:AddTileObject(obj)
 
-    local col = AdminRadZone.getRadColor(5)
+    local col = AdminRadZone.getRadColor()
     if col and AdminRadZone.obj then
         AdminRadZone.obj:setHighlightColor(col:getR()*255, col:getG()*255, col:getB()*255, 1)
         AdminRadZone.obj:setHighlighted(true, true)

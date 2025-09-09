@@ -41,6 +41,12 @@ option AdminRadZone.RoundDuration
 	page = AdminRadZone, translation = AdminRadZone_RoundDuration,
 }
 
+option AdminRadZone.MapDots
+{
+	type = integer, min = 1, max = 36, default = 6,
+	page = AdminRadZone, translation = AdminRadZone_MapDots,
+}
+
 
 option AdminRadZone.MarkerColor
 {

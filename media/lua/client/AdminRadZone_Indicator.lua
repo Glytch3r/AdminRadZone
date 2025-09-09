@@ -54,7 +54,11 @@ function AdminRadZoneIndicator:render()
             local stateColor = AdminRadZone.stateColors[AdminRadZoneData.state]
             color = {r=stateColor:getR(), g=stateColor:getG(), b=stateColor:getB(), a=1}
         end
+        if AdminRadZone.isOutOfBound() and AdminRadZoneData and AdminRadZoneData.run then
+            color = {r=1, g=0, b=0, a=1}
+        end
         self:drawTexture(self.texture, 0, 0, color.a, color.r, color.g, color.b)
+     
     end
 end
 
