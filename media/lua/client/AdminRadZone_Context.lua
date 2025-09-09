@@ -36,7 +36,7 @@ function AdminRadZone.context(player, context, worldobjects, test)
 	if not pl then return end 
 	if not AdminRadZone.isAdm(pl) then return end
 	
-	if getActivatedMods():contains("AdminFence") and not getCore():getDebug() then
+	if (getActivatedMods():contains("AdminFence") or getActivatedMods():contains("MiniToolKit")) and not getCore():getDebug() then
 		return
     end
 	local x, y = round(pl:getX()), round(pl:getY())

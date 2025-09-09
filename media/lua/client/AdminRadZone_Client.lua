@@ -125,6 +125,22 @@ end
 
 
 
+function AdminRadZone.save(key, data)
+    if (key == "AdminRadZoneData" or key == "AdminRadZone") and data then      
+        for dataKey, value in pairs(data) do
+            AdminRadZoneData[dataKey] = value
+        end
+        
+        for dataKey, _ in pairs(AdminRadZoneData) do
+            if data[dataKey] == nil then
+                AdminRadZoneData[dataKey] = nil
+            end
+        end
+        
+        return AdminRadZoneData
+    end
+end
+
 function AdminRadZone.initClient()
     if ModData.exists('AdminRadZoneData') then
         ModData.remove('AdminRadZoneData')
@@ -172,22 +188,6 @@ function AdminRadZone.isPanelInit()
 end
 -----------------------            ---------------------------
 
-
-function AdminRadZone.save(key, data)
-    if (key == "AdminRadZoneData" or key == "AdminRadZone") and data then      
-        for dataKey, value in pairs(data) do
-            AdminRadZoneData[dataKey] = value
-        end
-        
-        for dataKey, _ in pairs(AdminRadZoneData) do
-            if data[dataKey] == nil then
-                AdminRadZoneData[dataKey] = nil
-            end
-        end
-        
-        return AdminRadZoneData
-    end
-end
 
 
 -----------------------            ---------------------------

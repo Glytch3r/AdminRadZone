@@ -182,9 +182,9 @@ function AdminRadZonePanel:initialise()
         local pl = getPlayer()
         if not pl then return end 
         
-        AdminRadZoneData.x = round(pl:getX())
-        AdminRadZoneData.y = round(pl:getY())
-        
+        AdminRadZoneData.x = round(pl:getX())-0.5
+        AdminRadZoneData.y = round(pl:getY())-0.5
+
         if AdminRadZone.marker then
             AdminRadZone.marker:setPos(AdminRadZoneData.x, AdminRadZoneData.y, 0)
         end
